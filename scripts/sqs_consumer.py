@@ -23,7 +23,7 @@ def main() -> None:
         print("SQS_QUEUE_URL is not set — nothing to consume.", file=sys.stderr)
         sys.exit(1)
 
-    from inngest.event_publisher import InngestEventPublisher
+    from orchestration.event_publisher import InngestEventPublisher
 
     publisher = InngestEventPublisher(settings)
     consumer = SQSConsumer(settings, publisher)

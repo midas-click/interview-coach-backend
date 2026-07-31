@@ -20,7 +20,7 @@ class InngestEventPublisher:
 
     def __init__(self, settings: Settings) -> None:
         self._client = inngest.Inngest(
-            name="interview-intelligence",
+            app_id="interview-intelligence",
             event_key=settings.inngest_event_key,
             signing_key=settings.inngest_signing_key,
             api_base_url=settings.inngest_api_base_url or None,

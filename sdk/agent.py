@@ -56,7 +56,7 @@ class BaseAgent(ABC):
     name: str = ""
     prompt_name: str | None = None
 
-    def __init__(self, llm: LLMClient, prompt_store: PromptStore | None = None) -> None:
+    def __init__(self, llm: LLMClient | None = None, prompt_store: PromptStore | None = None) -> None:
         self._llm = llm
         self._prompts = prompt_store
 
@@ -70,7 +70,7 @@ class BaseAgent(ABC):
                 agent=self.name,
                 status=AgentStatus.SUCCESS,
                 execution_time=time.perf_counter() - started,
-                model=self._llm.model,
+                model=self._llm.model if self._llm else None,
                 prompt_version=self._current_prompt_version(),
                 structured_output=output,
             )
@@ -83,7 +83,7 @@ class BaseAgent(ABC):
                 agent=self.name,
                 status=AgentStatus.FAILED,
                 execution_time=time.perf_counter() - started,
-                model=self._llm.model,
+                model=self._llm.model if self._llm else None,
                 prompt_version=self._current_prompt_version(),
                 error=str(exc),
             )
@@ -120,3 +120,6 @@ class AgentRegistry:
 
     def names(self) -> list[str]:
         return sorted(self._factories)
+
+    def has(self, name: str) -> bool:
+        return name in self._factories

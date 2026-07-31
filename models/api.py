@@ -1,0 +1,60 @@
+"""API response schemas shared by routers."""
+
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel
+
+from models.agent_outputs import (
+    ConversationParseResult,
+    EnglishCoachResult,
+    InterviewCoachResult,
+    MetricsResult,
+    RecommendationResult,
+    VocabularyPhrase,
+)
+
+
+class InterviewSummary(BaseModel):
+    id: str
+    interview_id: str
+    company_name: str | None = None
+    interview_stage: str | None = None
+    language: str
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class InterviewDetail(InterviewSummary):
+    transcript_segments: list[dict[str, Any]] = []
+    questions: list[dict[str, Any]] = []
+    answers: list[dict[str, Any]] = []
+    timeline: list[dict[str, Any]] | None = None
+
+
+class AnalysisResponse(BaseModel):
+    interview_id: str
+    analysis: InterviewCoachResult | None = None
+
+
+class EnglishResponse(BaseModel):
+    interview_id: str
+    english: EnglishCoachResult | None = None
+
+
+class VocabularyResponse(BaseModel):
+    interview_id: str
+    phrases: list[VocabularyPhrase] = []
+
+
+class MetricsResponse(BaseModel):
+    interview_id: str
+    metrics: MetricsResult | None = None
+
+
+class RecommendationResponse(BaseModel):
+    interview_id: str
+    recommendation: RecommendationResult | None = None

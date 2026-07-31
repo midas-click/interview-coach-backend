@@ -8,6 +8,7 @@ from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from common.config import Settings
+from database.models import Base
 
 
 def build_engine(settings: Settings, **kwargs: object) -> Engine:
@@ -24,3 +25,9 @@ def build_session_factory(engine: Engine) -> Callable[[], Session]:
 
 def build_session_factory_from_settings(settings: Settings) -> Callable[[], Session]:
     return build_session_factory(build_engine(settings))
+
+
+def init_db(settings: Settings) -> None:
+    """Create all tables — used in dev / sqlite. Alembic handles production."""
+    engine = build_engine(settings)
+    Base.metadata.create_all(bind=engine)
