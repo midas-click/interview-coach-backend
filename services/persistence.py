@@ -49,7 +49,7 @@ class PersistenceService:
             interview_id,
             bucket=bucket,
             object_key=object_key,
-            raw_json=transcript.model_dump(by_alias=True),
+            raw_json=transcript.model_dump(mode="json", by_alias=True),
         )
 
     # ── status helpers ──────────────────────────────────────────────────

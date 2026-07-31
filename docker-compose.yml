@@ -19,7 +19,7 @@ services:
   # ── Inngest Dev Server ────────────────────────────────────────────────
   inngest:
     image: inngest/inngest:latest
-    command: ["inngest", "dev"]
+    command: ["inngest", "dev", "-u", "http://api:8000/api/inngest"]
     environment:
       INNGEST_DEV: "true"
       INNGEST_SERVE_ORIGIN: http://api:8000
@@ -34,11 +34,12 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    command: ["uvicorn", "api.app:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    command: ["uvicorn", "api.app:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
     environment:
       DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/interview_intelligence
       INNGEST_DEV: "true"
       INNGEST_EVENT_KEY: local
+      INNGEST_API_BASE_URL: http://inngest:8288
       INNGEST_EVENT_API_BASE_URL: http://inngest:8288
       INNGEST_SERVE_ORIGIN: http://api:8000
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}

@@ -29,12 +29,11 @@ def make_interview_uploaded_fn(
         fn_id="interview-uploaded-workflow",
         trigger=inngest.TriggerEvent(event="interview/uploaded"),
         retries=5,
-        idempotency="interview-uploaded-{{ event.data.interview_id }}",
     )
     async def handle(
         ctx: inngest.Context,
-        step: inngest.Step,
     ) -> dict[str, Any]:
+        step = ctx.step
         payload: dict[str, Any] = ctx.event.data
         logger.info(
             "workflow started",

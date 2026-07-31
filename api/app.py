@@ -25,7 +25,7 @@ from repositories.analyses import AnalysisRepository
 from repositories.interviews import InterviewRepository
 from services.deepseek import DeepSeekClient, DeepSeekError
 from services.persistence import PersistenceService
-from services.s3 import S3TranscriptSource
+from services.s3 import DevTranscriptSource, S3TranscriptSource, TranscriptSource
 from services.prompts import PromptStore
 from database.models import Base
 from database.models import Base
@@ -43,6 +43,12 @@ def create_app(settings: Settings | None = None, *, session_factory: Any = None)
         session_factory = build_session_factory_from_settings(settings)
     if settings.database_url.startswith("sqlite"):
         init_db(settings)
+    elif settings.database_url.startswith("postgres"):
+        from alembic.config import Config
+        from alembic import command
+        alembic_cfg = Config("alembic.ini")
+        alembic_cfg.set_main_option("sqlalchemy.url", settings.database_url)
+        command.upgrade(alembic_cfg, "head")
     interview_repo = InterviewRepository(session_factory)
     analysis_repo = AnalysisRepository(session_factory)
 
@@ -55,7 +61,11 @@ def create_app(settings: Settings | None = None, *, session_factory: Any = None)
         _get_logger(__name__).warning("DEEPSEEK_API_KEY not set — LLM agents will be unavailable")
         llm = None  # type: ignore[assignment]
     prompts = PromptStore()
-    transcript_source = S3TranscriptSource(settings)
+    # Use local files in dev, S3 in production.
+    if settings.environment == "development":
+        transcript_source: TranscriptSource = DevTranscriptSource()
+    else:
+        transcript_source = S3TranscriptSource(settings)
     persistence = PersistenceService(interview_repo, analysis_repo)
 
     # ── agents ──────────────────────────────────────────────────────────
