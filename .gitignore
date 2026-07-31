@@ -1,0 +1,71 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# --- Virtual environment ---
+.venv/
+venv/
+env/
+
+# --- Environment ---
+.env
+.env.local
+*.env
+
+# --- IDE ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- Testing ---
+.pytest_cache/
+.coverage
+htmlcov/
+.coverage.*
+
+# --- Type checking ---
+.mypy_cache/
+.ruff_cache/
+
+# --- Database ---
+*.db
+*.sqlite3
+
+# --- Docker ---
+docker-compose.override.yml
+.docker/
+
+# --- Terraform ---
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+*.tfvars
+!example.tfvars
+terraform.rc
+
+# --- Terraform plans ---
+*.tfplan
+
+# --- Logs ---
+*.log
+logs/
+
+# --- Alembic backup ---
+alembic/versions/*.bak
+
+# --- Secrets ---
+*.pem
+*.key
+secrets/

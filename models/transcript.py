@@ -1,0 +1,37 @@
+"""Transcript payload from the desktop app (transcript.json in S3)."""
+
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+class TranscriptSegment(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    speaker: str = "Unknown"
+    start: float = 0.0
+    end: float = 0.0
+    confidence: float = 0.0
+    text: str
+
+    @field_validator("end")
+    @classmethod
+    def end_after_start(cls, end: float, info: Any) -> float:
+        if end < info.data.get("start", 0.0):
+            raise ValueError(f"end ({end}) before start")
+        return end
+
+
+class TranscriptData(BaseModel):
+    """Validated transcript payload. Matches the desktop app's export format."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    meeting_id: str = Field(validation_alias="meetingId")
+    company_name: str | None = Field(default=None, validation_alias="companyName")
+    interview_stage: str | None = Field(default=None, validation_alias="interviewStage")
+    created_at: datetime | None = Field(default=None, validation_alias="createdAt")
+    language: str = "en"
+    transcript: list[TranscriptSegment] = Field(min_length=1)
