@@ -1,0 +1,79 @@
+services:
+  # ── Database ──────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: interview_intelligence
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Inngest Dev Server ────────────────────────────────────────────────
+  inngest:
+    image: inngest/inngest:latest
+    command: ["inngest", "dev"]
+    environment:
+      INNGEST_DEV: "true"
+      INNGEST_SERVE_ORIGIN: http://api:8000
+    ports:
+      - "8288:8288"
+    depends_on:
+      api:
+        condition: service_started
+
+  # ── API + Inngest function host ───────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: ["uvicorn", "api.app:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/interview_intelligence
+      INNGEST_DEV: "true"
+      INNGEST_EVENT_KEY: local
+      INNGEST_EVENT_API_BASE_URL: http://inngest:8288
+      INNGEST_SERVE_ORIGIN: http://api:8000
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      SQS_QUEUE_URL: ${SQS_QUEUE_URL:-}
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── SQS Consumer Worker ───────────────────────────────────────────────
+  worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: ["python", "-m", "scripts.sqs_consumer"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/interview_intelligence
+      INNGEST_DEV: "true"
+      INNGEST_EVENT_KEY: local
+      INNGEST_EVENT_API_BASE_URL: http://inngest:8288
+      SQS_QUEUE_URL: ${SQS_QUEUE_URL:-}
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_started
+
+volumes:
+  pgdata:
