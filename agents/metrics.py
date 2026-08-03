@@ -30,9 +30,14 @@ class MetricsAgent(BaseAgent):
         segments = context.transcript.transcript
         text = " ".join(s.text for s in segments)
 
-        # Split into candidate vs interviewer utterances.
-        candidate_texts = [s.text for s in segments if s.speaker.lower() == "candidate"]
-        interviewer_texts = [s.text for s in segments if s.speaker.lower() == "interviewer"]
+        # Split into candidate (Me / mic) vs interviewer utterances.
+        def _is_candidate(speaker: str) -> bool:
+            return speaker.lower() in ("candidate", "me")
+        def _is_interviewer(speaker: str) -> bool:
+            return speaker.lower() in ("interviewer", "unknown")
+
+        candidate_texts = [s.text for s in segments if _is_candidate(s.speaker)]
+        interviewer_texts = [s.text for s in segments if _is_interviewer(s.speaker)]
 
         # Word counts.
         all_words = _WORD_RE.findall(text.lower())
@@ -47,7 +52,7 @@ class MetricsAgent(BaseAgent):
         wpm = total_words / (total_duration / 60)
 
         # Speaking ratio.
-        candidate_duration = sum(s.end - s.start for s in segments if s.speaker.lower() == "candidate")
+        candidate_duration = sum(s.end - s.start for s in segments if _is_candidate(s.speaker))
         speaking_ratio = candidate_duration / total_duration
 
         # Filler words.
