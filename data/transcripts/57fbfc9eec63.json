@@ -10,7 +10,7 @@
       "start": 12.35,
       "end": 14.12,
       "confidence": -0.879,
-      "text": "Thank you very much."
+      "text": "Hi, Thank you for joining. My name is John. I will give you a brief intro of our product."
     },
     {
       "speaker": "Interviewer",
@@ -179,27 +179,6 @@
       "end": 57.04,
       "confidence": -0.551,
       "text": "Head over to you."
-    },
-    {
-      "speaker": "Interviewer",
-      "start": 51.7,
-      "end": 57.04,
-      "confidence": -0.551,
-      "text": "Yes, sure."
-    },
-    {
-      "speaker": "Interviewer",
-      "start": 51.7,
-      "end": 58.6,
-      "confidence": -0.569,
-      "text": "So."
-    },
-    {
-      "speaker": "Interviewer",
-      "start": 51.7,
-      "end": 58.6,
-      "confidence": -0.569,
-      "text": "So, I'm a full stack."
     },
     {
       "speaker": "Me",

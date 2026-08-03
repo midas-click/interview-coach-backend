@@ -13,6 +13,7 @@ from models.transcript import TranscriptData
 from sdk.agent import AgentContext, AgentRegistry, AgentResult
 from services.persistence import PersistenceService
 from services.s3 import TranscriptSource
+from services.transcript_preprocessor import preprocess
 
 logger = get_logger("inngest.workflows.interview_uploaded")
 
@@ -41,7 +42,14 @@ class InterviewUploadedWorkflow:
         # 1. Download transcript
         transcript = await self._step_download(step, bucket, object_key)
 
-        # 2. Create interview + save raw transcript
+        # 2. Pre-process: merge STT fragments into coherent utterances
+        cleaned = await step.run(
+            "preprocess-transcript",
+            lambda: preprocess(transcript).model_dump(mode="json", by_alias=True),
+        )
+        processed = TranscriptData.model_validate(cleaned)
+
+        # 3. Save RAW transcript (never overwritten) + interview record
         await step.run(
             "ensure-interview",
             lambda: self._persist.ensure_interview(interview_id, transcript, bucket, object_key),
@@ -51,18 +59,18 @@ class InterviewUploadedWorkflow:
             lambda: self._persist.mark_processing(interview_id),
         )
 
-        # 3. Parse conversation
-        parse_result = await self._step_parse(step, interview_id, transcript)
+        # 4. Parse conversation (using cleaned transcript)
+        parse_result = await self._step_parse(step, interview_id, processed)
 
         await step.run(
             "persist-parse",
             lambda: self._persist.persist_parser_result(interview_id, parse_result),
         )
 
-        # 4. Run analysis agents in parallel
+        # 5. Run analysis agents in parallel
         ctx = AgentContext(
             interview_id=interview_id,
-            transcript=transcript,
+            transcript=processed,
             previous_outputs={"conversation_parser": parse_result.structured_output},
         )
         analysis_results = await self._step_analyse(step, ctx)
@@ -75,7 +83,7 @@ class InterviewUploadedWorkflow:
 
         # 5. Recommendation
         previous = {r.agent: r.structured_output for r in analysis_results if r.status == "success"}
-        rec_result = await self._step_recommend(step, interview_id, transcript, previous)
+        rec_result = await self._step_recommend(step, interview_id, processed, previous)
 
         await step.run(
             "persist-recommendation",
