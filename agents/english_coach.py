@@ -25,7 +25,8 @@ class EnglishCoach(BaseAgent):
         )
         response = await self._llm.complete_json(
             system=prompt,
-            user="Analyze the candidate's spoken English and return structured feedback.",
+            user="Analyze the candidate's spoken English. Return only the top 15 mistakes, not all.",
+            max_tokens=8192,
         )
         parsed = EnglishCoachResult.model_validate(response.parsed)
         return parsed.model_dump()
