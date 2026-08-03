@@ -142,6 +142,29 @@ class VocabularyItem(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
 
+class QuestionReview(Base):
+    __tablename__ = "question_reviews"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    interview_id: Mapped[str] = mapped_column(
+        String, ForeignKey("interviews.interview_id"), unique=True, index=True
+    )
+    reviews: Mapped[list] = mapped_column(JSON)  # type: ignore[assignment]
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class TranscriptCorrection(Base):
+    __tablename__ = "transcript_corrections"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    interview_id: Mapped[str] = mapped_column(
+        String, ForeignKey("interviews.interview_id"), unique=True, index=True
+    )
+    corrections: Mapped[list] = mapped_column(JSON)  # type: ignore[assignment]
+    corrected_transcript: Mapped[list] = mapped_column(JSON)  # type: ignore[assignment]
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
 class Recommendation(Base):
     __tablename__ = "recommendations"
 

@@ -45,11 +45,34 @@ class InterviewUploadedWorkflow:
         # 2. Pre-process: merge STT fragments into coherent utterances
         cleaned = await step.run(
             "preprocess-transcript",
-            lambda: preprocess(transcript).model_dump(mode="json", by_alias=True),
+            lambda: preprocess(transcript, gap_threshold=0.2).model_dump(mode="json", by_alias=True),
         )
         processed = TranscriptData.model_validate(cleaned)
 
-        # 3. Save RAW transcript (never overwritten) + interview record
+        # 3. Correct mis-transcribed words (STT errors)
+        tc_result = await self._step_agent(
+            step, "transcription_corrector", "correct-transcription",
+            interview_id, processed, {},
+        )
+        if tc_result.status == "success" and tc_result.structured_output:
+            segs = tc_result.structured_output.get("corrected_transcript", [])
+            corrected = TranscriptData(
+                meeting_id=processed.meeting_id,
+                company_name=processed.company_name,
+                interview_stage=processed.interview_stage,
+                language=processed.language,
+                transcript=[TranscriptSegment.model_validate(s) for s in segs],
+            ) if segs else processed
+        else:
+            corrected = processed
+
+        await step.run(
+            "persist-corrections",
+            lambda: self._persist.persist_transcript_corrections(interview_id, tc_result)
+            if tc_result.status == "success" else None,
+        )
+
+        # 4. Save RAW transcript (never overwritten) + interview record
         await step.run(
             "ensure-interview",
             lambda: self._persist.ensure_interview(interview_id, transcript, bucket, object_key),
@@ -60,7 +83,7 @@ class InterviewUploadedWorkflow:
         )
 
         # 4. Parse conversation (using cleaned transcript)
-        parse_result = await self._step_parse(step, interview_id, processed)
+        parse_result = await self._step_parse(step, interview_id, corrected)
 
         await step.run(
             "persist-parse",
@@ -70,7 +93,7 @@ class InterviewUploadedWorkflow:
         # 5. Run analysis agents in parallel
         ctx = AgentContext(
             interview_id=interview_id,
-            transcript=processed,
+            transcript=corrected,
             previous_outputs={"conversation_parser": parse_result.structured_output},
         )
         analysis_results = await self._step_analyse(step, ctx)
@@ -83,12 +106,27 @@ class InterviewUploadedWorkflow:
 
         # 5. Recommendation
         previous = {r.agent: r.structured_output for r in analysis_results if r.status == "success"}
-        rec_result = await self._step_recommend(step, interview_id, processed, previous)
+        rec_result = await self._step_recommend(step, interview_id, corrected, previous)
 
         await step.run(
             "persist-recommendation",
             lambda: self._persist.persist_recommendation(interview_id, rec_result)
             if rec_result.status == "success"
+            else None,
+        )
+
+        # 5b. Question Reviewer (Q&A review with improved answers)
+        qa_prev = {
+            **previous,
+            "conversation_parser": parse_result.structured_output,
+        }
+        qr_result = await self._step_agent(
+            step, "question_reviewer", "review-questions", interview_id, corrected, qa_prev
+        )
+        await step.run(
+            "persist-question-reviews",
+            lambda: self._persist.persist_question_reviews(interview_id, qr_result)
+            if qr_result.status == "success"
             else None,
         )
 
@@ -128,6 +166,16 @@ class InterviewUploadedWorkflow:
             r = await self._run_agent(RECOMMENDER, iid, t, prev)
             return self._serialise(r)
         raw = await step.run("generate-recommendation", _fn)
+        return self._deserialise(raw)
+
+    async def _step_agent(
+        self, step: inngest.Step, agent_name: str, step_id: str,
+        iid: str, t: TranscriptData, prev: dict,
+    ) -> AgentResult:
+        async def _fn():
+            r = await self._run_agent(agent_name, iid, t, prev)
+            return self._serialise(r)
+        raw = await step.run(step_id, _fn)
         return self._deserialise(raw)
 
     # ── agent execution ────────────────────────────────────────────────────

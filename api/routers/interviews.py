@@ -14,7 +14,9 @@ from models.api import (
     InterviewDetail,
     InterviewSummary,
     MetricsResponse,
+    QuestionReviewsResponse,
     RecommendationResponse,
+    TranscriptCorrectionsResponse,
     VocabularyResponse,
 )
 from models.agent_outputs import VocabularyPhrase
@@ -196,4 +198,29 @@ def get_recommendations(
             "technical_topics": row.technical_topics,
             "summary": row.summary,
         },
+    )
+
+
+@router.get("/{interview_id}/reviews", response_model=QuestionReviewsResponse)
+def get_reviews(
+    interview_id: str,
+    repo: AnalysisRepository = Depends(get_analysis_repo),
+) -> QuestionReviewsResponse:
+    row = repo.get_question_reviews(interview_id)
+    return QuestionReviewsResponse(
+        interview_id=interview_id,
+        reviews=row.reviews if row else [],
+    )
+
+
+@router.get("/{interview_id}/corrections", response_model=TranscriptCorrectionsResponse)
+def get_corrections(
+    interview_id: str,
+    repo: AnalysisRepository = Depends(get_analysis_repo),
+) -> TranscriptCorrectionsResponse:
+    row = repo.get_transcript_corrections(interview_id)
+    return TranscriptCorrectionsResponse(
+        interview_id=interview_id,
+        corrections=row.corrections if row else [],
+        corrected_transcript=row.corrected_transcript if row else [],
     )

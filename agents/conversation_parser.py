@@ -26,6 +26,7 @@ class ConversationParser(BaseAgent):
         response = await self._llm.complete_json(
             system=prompt,
             user="Parse this interview transcript into structured questions, answers, and timeline.",
+            max_tokens=4096,
         )
         parsed = ConversationParseResult.model_validate(response.parsed)
         return parsed.model_dump()

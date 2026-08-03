@@ -69,3 +69,7 @@ alembic/versions/*.bak
 *.pem
 *.key
 secrets/
+
+# --- Transcripts data ---
+data/transcripts/*
+!data/transcripts/demo-001.json

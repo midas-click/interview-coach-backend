@@ -139,3 +139,35 @@ class RecommendationResult(BaseModel):
     english_practice: list[PracticeExercise] = Field(default_factory=list)
     technical_topics: list[TechnicalTopic] = Field(default_factory=list)
     summary: str
+
+
+# ── Question Reviewer ────────────────────────────────────────────────
+
+class QAReview(BaseModel):
+    question_summary: str
+    original_answer_summary: str
+    recommended_answer: str
+    key_improvements: list[str] = Field(default_factory=list)
+
+
+class QuestionReviewResult(BaseModel):
+    reviews: list[QAReview] = Field(default_factory=list)
+
+
+# ── Transcription Corrector ──────────────────────────────────────────
+
+class MisTranscribedWord(BaseModel):
+    original_word: str
+    corrected_word: str
+    reason: str = ""
+
+
+class TranscriptCorrection(BaseModel):
+    segment_index: int
+    original_text: str
+    corrected_text: str
+    mis_transcribed: list[MisTranscribedWord] = Field(default_factory=list)
+
+
+class TranscriptionCorrectionResult(BaseModel):
+    corrections: list[TranscriptCorrection] = Field(default_factory=list)

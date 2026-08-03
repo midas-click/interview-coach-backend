@@ -161,3 +161,21 @@ class PersistenceService:
         ]
         if topics:
             self._analyses.replace_learning_topics(rec.id, topics)
+
+    def persist_question_reviews(
+        self, interview_id: str, result: AgentResult
+    ) -> None:
+        output: dict[str, Any] = result.structured_output or {}
+        self._analyses.upsert_question_reviews(
+            interview_id, output.get("reviews", [])
+        )
+
+    def persist_transcript_corrections(
+        self, interview_id: str, result: AgentResult
+    ) -> None:
+        output: dict[str, Any] = result.structured_output or {}
+        self._analyses.upsert_transcript_corrections(
+            interview_id,
+            output.get("corrections", []),
+            output.get("corrected_transcript", []),
+        )

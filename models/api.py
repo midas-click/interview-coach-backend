@@ -58,3 +58,14 @@ class MetricsResponse(BaseModel):
 class RecommendationResponse(BaseModel):
     interview_id: str
     recommendation: RecommendationResult | None = None
+
+
+class QuestionReviewsResponse(BaseModel):
+    interview_id: str
+    reviews: list[dict] = []
+
+
+class TranscriptCorrectionsResponse(BaseModel):
+    interview_id: str
+    corrections: list[dict] = []
+    corrected_transcript: list[dict] = []

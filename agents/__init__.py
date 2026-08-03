@@ -15,7 +15,9 @@ from .conversation_parser import ConversationParser
 from .english_coach import EnglishCoach
 from .interview_coach import InterviewCoach
 from .metrics import MetricsAgent
+from .question_reviewer import QuestionReviewer
 from .recommendation import RecommendationAgent
+from .transcription_corrector import TranscriptionCorrector
 from .vocabulary import VocabularyAgent
 
 
@@ -29,4 +31,6 @@ def build_registry(llm: LLMClient | None, prompts: PromptStore) -> AgentRegistry
         registry.register("english_coach", lambda: EnglishCoach(llm, prompts))
         registry.register("vocabulary", lambda: VocabularyAgent(llm, prompts))
         registry.register("recommendation", lambda: RecommendationAgent(llm, prompts))
+        registry.register("question_reviewer", lambda: QuestionReviewer(llm, prompts))
+        registry.register("transcription_corrector", lambda: TranscriptionCorrector(llm, prompts))
     return registry

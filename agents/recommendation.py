@@ -28,6 +28,7 @@ class RecommendationAgent(BaseAgent):
         response = await self._llm.complete_json(
             system=prompt,
             user="Generate a personalized learning plan based on the interview analysis above.",
+            max_tokens=4096,
         )
         parsed = RecommendationResult.model_validate(response.parsed)
         return parsed.model_dump()

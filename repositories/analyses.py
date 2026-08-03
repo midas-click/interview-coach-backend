@@ -13,7 +13,9 @@ from database.models import (
     InterviewAnalysis,
     LearningTopic,
     Metrics,
+    QuestionReview,
     Recommendation,
+    TranscriptCorrection,
     VocabularyItem,
 )
 
@@ -131,6 +133,35 @@ class AnalysisRepository:
         with self._session_factory() as session:
             return session.execute(
                 select(Metrics).where(Metrics.interview_id == interview_id)
+            ).scalar_one_or_none()
+
+    # ── question reviews ───────────────────────────────────────────
+
+    def upsert_question_reviews(self, interview_id: str, reviews: list[dict[str, Any]]) -> QuestionReview:
+        return self._upsert(QuestionReview, interview_id, reviews=reviews)
+
+    def get_question_reviews(self, interview_id: str) -> QuestionReview | None:
+        with self._session_factory() as session:
+            return session.execute(
+                select(QuestionReview).where(QuestionReview.interview_id == interview_id)
+            ).scalar_one_or_none()
+
+    # ── transcript corrections ────────────────────────────────────
+
+    def upsert_transcript_corrections(
+        self, interview_id: str, corrections: list[dict], corrected_transcript: list[dict]
+    ) -> TranscriptCorrection:
+        return self._upsert(
+            TranscriptCorrection, interview_id,
+            corrections=corrections, corrected_transcript=corrected_transcript,
+        )
+
+    def get_transcript_corrections(self, interview_id: str) -> TranscriptCorrection | None:
+        with self._session_factory() as session:
+            return session.execute(
+                select(TranscriptCorrection).where(
+                    TranscriptCorrection.interview_id == interview_id
+                )
             ).scalar_one_or_none()
 
     # ── recommendation ──────────────────────────────────────────────────

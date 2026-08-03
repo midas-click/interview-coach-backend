@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     deepseek_model: str = "deepseek-chat"
     deepseek_timeout_seconds: float = 120.0
     deepseek_max_retries: int = 3
-    deepseek_max_tokens: int = 4096
+    deepseek_max_tokens: int = 8192
     deepseek_rpm: int = 60
 
     @property
