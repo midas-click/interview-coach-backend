@@ -1,20 +1,16 @@
 """Transcription Corrector — fixes mis-transcribed words from STT errors.
 
-Only outputs corrections — the full corrected transcript is built in Python
-to avoid hitting LLM token limits.
+Only outputs corrections — the full corrected transcript is built in Python.
 """
 
 from __future__ import annotations
-
-import json
 
 from models.agent_outputs import TranscriptionCorrectionResult
 from sdk.agent import AgentContext, BaseAgent
 
 
 class TranscriptionCorrector(BaseAgent):
-    """Identifies STT errors. Outputs only the corrections; the workflow
-    builds the corrected transcript in Python."""
+    """Identifies STT errors. Outputs only corrections; workflow builds the corrected transcript."""
 
     name = "transcription_corrector"
     prompt_name = "transcription_corrector"
@@ -23,9 +19,7 @@ class TranscriptionCorrector(BaseAgent):
         prompt = self._prompts.render(
             self.prompt_name,
             interview_id=context.interview_id,
-            transcript=json.dumps(
-                [s.model_dump() for s in context.transcript.transcript], indent=2
-            ),
+            transcript=self._transcript_json(context.transcript),
         )
         response = await self._llm.complete_json(
             system=prompt,
@@ -34,18 +28,15 @@ class TranscriptionCorrector(BaseAgent):
         )
         parsed = TranscriptionCorrectionResult.model_validate(response.parsed)
 
-        # Build the corrected transcript in Python.
+        # Build corrected transcript in Python from the corrections list.
         segments = [s.model_dump() for s in context.transcript.transcript]
-        correction_map: dict[int, str] = {}
-        for c in parsed.corrections:
-            correction_map[c.segment_index] = c.corrected_text
+        correction_map: dict[int, str] = {c.segment_index: c.corrected_text for c in parsed.corrections}
 
         corrected_transcript: list[dict] = []
         all_corrections: list[dict] = []
         for i, seg in enumerate(segments):
             if i in correction_map:
                 corrected_transcript.append({**seg, "text": correction_map[i]})
-                # Find the matching correction for the flat list.
                 for c in parsed.corrections:
                     if c.segment_index == i:
                         all_corrections.append({
@@ -58,7 +49,4 @@ class TranscriptionCorrector(BaseAgent):
             else:
                 corrected_transcript.append(seg)
 
-        return {
-            "corrections": all_corrections,
-            "corrected_transcript": corrected_transcript,
-        }
+        return {"corrections": all_corrections, "corrected_transcript": corrected_transcript}

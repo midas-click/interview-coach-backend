@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 
 from models.agent_outputs import EnglishCoachResult
-from models.transcript import TranscriptData
 from sdk.agent import AgentContext, BaseAgent
 
 
@@ -20,7 +19,7 @@ class EnglishCoach(BaseAgent):
         prompt = self._prompts.render(
             self.prompt_name,
             interview_id=context.interview_id,
-            transcript=json.dumps([s.model_dump() for s in context.transcript.transcript], indent=2),
+            transcript=self._transcript_json(context.transcript),
             qa_pairs=json.dumps(qa_pairs, indent=2) if qa_pairs else "[]",
         )
         response = await self._llm.complete_json(
@@ -28,5 +27,4 @@ class EnglishCoach(BaseAgent):
             user="Analyze the candidate's spoken English. Return only the top 15 mistakes, not all.",
             max_tokens=8192,
         )
-        parsed = EnglishCoachResult.model_validate(response.parsed)
-        return parsed.model_dump()
+        return EnglishCoachResult.model_validate(response.parsed).model_dump()

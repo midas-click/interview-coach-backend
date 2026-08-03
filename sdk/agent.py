@@ -100,6 +100,12 @@ class BaseAgent(ABC):
                 return None
         return None
 
+    @staticmethod
+    def _transcript_json(transcript: Any) -> str:
+        """Serialise transcript segments to a JSON string (shared by agents)."""
+        import json as _json
+        return _json.dumps([s.model_dump() for s in transcript.transcript], indent=2)
+
 
 class AgentRegistry:
     """Factory registry: agent name → callable returning a configured agent."""

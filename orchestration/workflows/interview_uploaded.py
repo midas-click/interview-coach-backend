@@ -1,4 +1,4 @@
-"""InterviewUploaded workflow: download → parse → parallel analysis → recommend → persist."""
+"""InterviewUploaded workflow: download → preprocess → correct → parse → analyse → recommend → review → persist."""
 
 from __future__ import annotations
 
@@ -18,8 +18,6 @@ from services.transcript_preprocessor import preprocess
 logger = get_logger("inngest.workflows.interview_uploaded")
 
 ANALYSIS_AGENTS = ["interview_coach", "english_coach", "vocabulary", "metrics"]
-PARSER_AGENT = "conversation_parser"
-RECOMMENDER = "recommendation"
 
 
 class InterviewUploadedWorkflow:
@@ -35,158 +33,124 @@ class InterviewUploadedWorkflow:
         self._registry = agent_registry or _default_registry_factory(None, None)  # type: ignore[arg-type]
 
     async def run(self, payload: dict[str, Any], step: inngest.Step) -> None:
-        interview_id: str = payload["interview_id"]
+        iid: str = payload["interview_id"]
         bucket: str = payload["bucket"]
-        object_key: str = payload["object_key"]
+        key: str = payload["object_key"]
 
-        # 1. Download transcript
-        transcript = await self._step_download(step, bucket, object_key)
+        # 1. Download raw transcript
+        transcript = await self._step_download(step, bucket, key)
 
-        # 2. Pre-process: merge STT fragments into coherent utterances
+        # 2. Preprocess — merge STT fragments
         cleaned = await step.run(
             "preprocess-transcript",
             lambda: preprocess(transcript, gap_threshold=0.2).model_dump(mode="json", by_alias=True),
         )
         processed = TranscriptData.model_validate(cleaned)
 
-        # 3. Correct mis-transcribed words (STT errors)
+        # 3. Correct mis-transcribed words
         tc_result = await self._step_agent(
-            step, "transcription_corrector", "correct-transcription",
-            interview_id, processed, {},
+            step, "transcription_corrector", "correct-transcription", iid, processed, {},
         )
-        if tc_result.status == "success" and tc_result.structured_output:
-            segs = tc_result.structured_output.get("corrected_transcript", [])
-            corrected = TranscriptData(
-                meeting_id=processed.meeting_id,
-                company_name=processed.company_name,
-                interview_stage=processed.interview_stage,
-                language=processed.language,
-                transcript=[TranscriptSegment.model_validate(s) for s in segs],
-            ) if segs else processed
-        else:
-            corrected = processed
+        corrected = self._apply_corrections(processed, tc_result)
 
         await step.run(
             "persist-corrections",
-            lambda: self._persist.persist_transcript_corrections(interview_id, tc_result)
+            lambda: self._persist.persist_transcript_corrections(iid, tc_result)
             if tc_result.status == "success" else None,
         )
 
-        # 4. Save RAW transcript (never overwritten) + interview record
+        # 4. Save RAW transcript + create interview record
         await step.run(
             "ensure-interview",
-            lambda: self._persist.ensure_interview(interview_id, transcript, bucket, object_key),
+            lambda: self._persist.ensure_interview(iid, transcript, bucket, key),
         )
-        await step.run(
-            "mark-processing",
-            lambda: self._persist.mark_processing(interview_id),
+        await step.run("mark-processing", lambda: self._persist.mark_processing(iid))
+
+        # 5. Parse conversation
+        parse_result = await self._step_agent(
+            step, "conversation_parser", "parse-conversation", iid, corrected, {},
         )
-
-        # 4. Parse conversation (using cleaned transcript)
-        parse_result = await self._step_parse(step, interview_id, corrected)
-
         await step.run(
             "persist-parse",
-            lambda: self._persist.persist_parser_result(interview_id, parse_result),
+            lambda: self._persist.persist_parser_result(iid, parse_result),
         )
 
-        # 5. Run analysis agents in parallel
-        ctx = AgentContext(
-            interview_id=interview_id,
-            transcript=corrected,
-            previous_outputs={"conversation_parser": parse_result.structured_output},
+        # 6. Analysis agents in parallel
+        analysis_results = await self._step_analyse(
+            step,
+            AgentContext(
+                interview_id=iid, transcript=corrected,
+                previous_outputs={"conversation_parser": parse_result.structured_output},
+            ),
         )
-        analysis_results = await self._step_analyse(step, ctx)
-
         for r in analysis_results:
-            await step.run(
-                f"persist-{r.agent}",
-                lambda r=r: self._persist_analysis(interview_id, r),
-            )
+            await step.run(f"persist-{r.agent}", lambda r=r: self._persist_analysis(iid, r))
 
-        # 5. Recommendation
-        previous = {r.agent: r.structured_output for r in analysis_results if r.status == "success"}
-        rec_result = await self._step_recommend(step, interview_id, corrected, previous)
-
+        # 7. Recommendation
+        prev = {r.agent: r.structured_output for r in analysis_results if r.status == "success"}
+        rec_result = await self._step_agent(
+            step, "recommendation", "generate-recommendation", iid, corrected, prev,
+        )
         await step.run(
             "persist-recommendation",
-            lambda: self._persist.persist_recommendation(interview_id, rec_result)
-            if rec_result.status == "success"
-            else None,
+            lambda: self._persist.persist_recommendation(iid, rec_result)
+            if rec_result.status == "success" else None,
         )
 
-        # 5b. Question Reviewer (Q&A review with improved answers)
-        qa_prev = {
-            **previous,
-            "conversation_parser": parse_result.structured_output,
-        }
+        # 8. Question reviewer
         qr_result = await self._step_agent(
-            step, "question_reviewer", "review-questions", interview_id, corrected, qa_prev
+            step, "question_reviewer", "review-questions", iid, corrected,
+            {**prev, "conversation_parser": parse_result.structured_output},
         )
         await step.run(
             "persist-question-reviews",
-            lambda: self._persist.persist_question_reviews(interview_id, qr_result)
-            if qr_result.status == "success"
-            else None,
+            lambda: self._persist.persist_question_reviews(iid, qr_result)
+            if qr_result.status == "success" else None,
         )
 
-        # 6. Final status
-        all_results = [parse_result, rec_result, *analysis_results]
-        partial = any(r.status == "failed" for r in all_results)
+        # 9. Final status
+        partial = any(
+            r.status == "failed"
+            for r in [parse_result, rec_result, *analysis_results]
+        )
         await step.run(
             "mark-completed",
-            lambda: self._persist.mark_completed(interview_id, partial=partial),
+            lambda: self._persist.mark_completed(iid, partial=partial),
         )
 
-    # ── step helpers (each returns JSON-safe data via serialise/deserialise) ─
+    # ── step helpers ───────────────────────────────────────────────────────
 
     async def _step_download(self, step: inngest.Step, bucket: str, key: str) -> TranscriptData:
         async def _fn():
             t = await self._source.download(bucket, key)
             return t.model_dump(mode="json", by_alias=True)
-        raw = await step.run("download-transcript", _fn)
-        return TranscriptData.model_validate(raw)
+        return TranscriptData.model_validate(await step.run("download-transcript", _fn))
 
-    async def _step_parse(self, step: inngest.Step, iid: str, t: TranscriptData) -> AgentResult:
+    async def _step_agent(
+        self, step: inngest.Step, name: str, step_id: str,
+        iid: str, t: TranscriptData, prev: dict,
+    ) -> AgentResult:
         async def _fn():
-            r = await self._run_agent(PARSER_AGENT, iid, t, {})
-            return self._serialise(r)
-        raw = await step.run("parse-conversation", _fn)
-        return self._deserialise(raw)
+            r = await self._run_agent(name, iid, t, prev)
+            return r.model_dump(mode="json")
+        return AgentResult.model_validate(await step.run(step_id, _fn))
 
     async def _step_analyse(self, step: inngest.Step, ctx: AgentContext) -> list[AgentResult]:
         async def _fn():
             results = await self._run_analyses(ctx)
             return [r.model_dump(mode="json") for r in results]
-        raw = await step.run("run-analysis-agents", _fn)
-        return [AgentResult.model_validate(d) for d in raw]
-
-    async def _step_recommend(self, step: inngest.Step, iid: str, t: TranscriptData, prev: dict) -> AgentResult:
-        async def _fn():
-            r = await self._run_agent(RECOMMENDER, iid, t, prev)
-            return self._serialise(r)
-        raw = await step.run("generate-recommendation", _fn)
-        return self._deserialise(raw)
-
-    async def _step_agent(
-        self, step: inngest.Step, agent_name: str, step_id: str,
-        iid: str, t: TranscriptData, prev: dict,
-    ) -> AgentResult:
-        async def _fn():
-            r = await self._run_agent(agent_name, iid, t, prev)
-            return self._serialise(r)
-        raw = await step.run(step_id, _fn)
-        return self._deserialise(raw)
+        return [AgentResult.model_validate(d) for d in await step.run("run-analysis-agents", _fn)]
 
     # ── agent execution ────────────────────────────────────────────────────
 
     async def _run_agent(
-        self, name: str, iid: str, transcript: Any, prev: dict[str, Any]
+        self, name: str, iid: str, transcript: Any, prev: dict[str, Any],
     ) -> AgentResult:
         if not self._registry.has(name):
             return AgentResult(agent=name, status="skipped")
-        agent = self._registry.create(name)
-        return await agent.run(AgentContext(interview_id=iid, transcript=transcript, previous_outputs=prev))
+        return await self._registry.create(name).run(
+            AgentContext(interview_id=iid, transcript=transcript, previous_outputs=prev),
+        )
 
     async def _run_analyses(self, context: AgentContext) -> list[AgentResult]:
         tasks = [
@@ -202,9 +166,9 @@ class InterviewUploadedWorkflow:
                 results.append(AgentResult(agent="unknown", status="failed", error=str(item)))
         return results
 
-    # ── persistence dispatch ───────────────────────────────────────────────
+    # ── helpers ────────────────────────────────────────────────────────────
 
-    def _persist_analysis(self, interview_id: str, result: AgentResult) -> None:
+    def _persist_analysis(self, iid: str, result: AgentResult) -> None:
         mapping = {
             "interview_coach": self._persist.persist_interview_analysis,
             "english_coach": self._persist.persist_english_analysis,
@@ -213,14 +177,19 @@ class InterviewUploadedWorkflow:
         }
         handler = mapping.get(result.agent)
         if handler and result.status == "success":
-            handler(interview_id, result)
-
-    # ── serialisation ──────────────────────────────────────────────────────
+            handler(iid, result)
 
     @staticmethod
-    def _serialise(r: AgentResult) -> dict[str, Any]:
-        return r.model_dump(mode="json")
-
-    @staticmethod
-    def _deserialise(d: dict[str, Any]) -> AgentResult:
-        return AgentResult.model_validate(d)
+    def _apply_corrections(original: TranscriptData, result: AgentResult) -> TranscriptData:
+        if result.status != "success" or not result.structured_output:
+            return original
+        segs = result.structured_output.get("corrected_transcript", [])
+        if not segs:
+            return original
+        return TranscriptData(
+            meeting_id=original.meeting_id,
+            company_name=original.company_name,
+            interview_stage=original.interview_stage,
+            language=original.language,
+            transcript=[TranscriptSegment.model_validate(s) for s in segs],
+        )

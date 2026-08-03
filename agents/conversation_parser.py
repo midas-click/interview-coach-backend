@@ -1,15 +1,13 @@
-"""Conversation Parser — splits raw transcript into structured Q/A pairs + timeline."""
+"""Conversation Parser — splits raw transcript into structured Q/A pairs."""
 
 from __future__ import annotations
-
-import json
 
 from models.agent_outputs import ConversationParseResult
 from sdk.agent import AgentContext, BaseAgent
 
 
 class ConversationParser(BaseAgent):
-    """Parses a raw interview transcript into questions, answers, and a timeline."""
+    """Parses a raw interview transcript into questions and answers."""
 
     name = "conversation_parser"
     prompt_name = "conversation_parser"
@@ -19,14 +17,11 @@ class ConversationParser(BaseAgent):
             self.prompt_name,
             interview_id=context.interview_id,
             language=context.transcript.language,
-            transcript=json.dumps(
-                [s.model_dump() for s in context.transcript.transcript], indent=2
-            ),
+            transcript=self._transcript_json(context.transcript),
         )
         response = await self._llm.complete_json(
             system=prompt,
-            user="Parse this interview transcript into structured questions, answers, and timeline.",
+            user="Parse this interview transcript into structured questions and answers.",
             max_tokens=8192,
         )
-        parsed = ConversationParseResult.model_validate(response.parsed)
-        return parsed.model_dump()
+        return ConversationParseResult.model_validate(response.parsed).model_dump()

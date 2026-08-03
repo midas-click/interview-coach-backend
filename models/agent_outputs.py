@@ -7,14 +7,6 @@ from pydantic import BaseModel, Field
 
 # ── Conversation Parser ────────────────────────────────────────────────────
 
-class TimelineEntry(BaseModel):
-    type: str  # question | answer | other
-    speaker: str
-    text: str
-    start: float
-    end: float
-
-
 class ParsedQuestion(BaseModel):
     id: str
     sequence: int
@@ -39,7 +31,6 @@ class ParsedAnswer(BaseModel):
 class ConversationParseResult(BaseModel):
     questions: list[ParsedQuestion] = Field(default_factory=list)
     answers: list[ParsedAnswer] = Field(default_factory=list)
-    timeline: list[TimelineEntry] = Field(default_factory=list)  # optional, no longer required
 
 
 # ── Interview Coach ────────────────────────────────────────────────────────

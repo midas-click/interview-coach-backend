@@ -33,11 +33,9 @@ class MetricsAgent(BaseAgent):
         # Split into candidate vs interviewer utterances.
         candidate_texts = [s.text for s in segments if s.speaker.lower() == "candidate"]
         interviewer_texts = [s.text for s in segments if s.speaker.lower() == "interviewer"]
-        all_text = text
 
         # Word counts.
-        all_words = _WORD_RE.findall(all_text.lower())
-        candidate_words = _WORD_RE.findall(" ".join(candidate_texts).lower())
+        all_words = _WORD_RE.findall(text.lower())
         total_words = len(all_words) or 1
 
         # Answer metrics.
@@ -53,7 +51,7 @@ class MetricsAgent(BaseAgent):
         speaking_ratio = candidate_duration / total_duration
 
         # Filler words.
-        filler_counts = {w: all_text.lower().count(w) for w in _FILLER_WORDS if w in all_text.lower()}
+        filler_counts = {w: text.lower().count(w) for w in _FILLER_WORDS if w in text.lower()}
         filler_list = [{"word": w, "count": c} for w, c in filler_counts.items() if c > 0]
 
         # Repeated words (top 5 most common, excluding stops).
