@@ -39,7 +39,7 @@ class ParsedAnswer(BaseModel):
 class ConversationParseResult(BaseModel):
     questions: list[ParsedQuestion] = Field(default_factory=list)
     answers: list[ParsedAnswer] = Field(default_factory=list)
-    timeline: list[TimelineEntry] = Field(default_factory=list)
+    timeline: list[TimelineEntry] = Field(default_factory=list)  # optional, no longer required
 
 
 # ── Interview Coach ────────────────────────────────────────────────────────

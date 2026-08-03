@@ -9,7 +9,7 @@ import inngest
 
 from agents import build_registry as _default_registry_factory
 from common.logging import get_logger
-from models.transcript import TranscriptData
+from models.transcript import TranscriptData, TranscriptSegment
 from sdk.agent import AgentContext, AgentRegistry, AgentResult
 from services.persistence import PersistenceService
 from services.s3 import TranscriptSource

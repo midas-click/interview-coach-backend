@@ -21,11 +21,12 @@ Return ONLY valid JSON:
   "corrections": [
     {
       "segment_index": 1,
-      "original_text": "I'm taking very applications that ink.",
-      "corrected_text": "I've been working on various applications I think.",
+      "original_text": "I'm a first-time engineer and my main takes days like JavaScript, TypeScript, ODHS in front-end side",
+      "corrected_text": "I'm a full-stack engineer and my main techstack is like JavaScript, TypeScript, React.js in front-end side",
       "mis_transcribed": [
-        {"original_word": "taking", "corrected_word": "working on", "reason": "phonetic"},
-        {"original_word": "that ink", "corrected_word": "I think", "reason": "phonetic"}
+        {"original_word": "first-time", "corrected_word": "full-stack", "reason": "phonetic"},
+        {"original_word": "takes days", "corrected_word": "techstack is", "reason": "phonetic"},
+        {"original_word": "ODHS", "corrected_word": "React.js", "reason": "phonetic"}
       ]
     }
   ]
