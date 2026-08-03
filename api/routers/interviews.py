@@ -39,6 +39,16 @@ def _summary(row: Any) -> InterviewSummary:
     )
 
 
+@router.delete("/{interview_id}", status_code=204)
+def delete_interview(
+    interview_id: str,
+    repo: InterviewRepository = Depends(get_interview_repo),
+) -> None:
+    deleted = repo.delete(interview_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="interview not found")
+
+
 @router.get("", response_model=list[InterviewSummary])
 def list_interviews(
     limit: int = 50,

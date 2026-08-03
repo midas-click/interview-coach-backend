@@ -178,3 +178,38 @@ class InterviewRepository:
                     .order_by(Answer.sequence)
                 ).scalars()
             )
+
+    def delete(self, interview_id: str) -> bool:
+        """Delete an interview and all related records. Returns True if deleted."""
+        with self._session_factory() as session:
+            interview = session.execute(
+                select(Interview).where(Interview.interview_id == interview_id)
+            ).scalar_one_or_none()
+            if interview is None:
+                return False
+
+            # Delete in dependency order: children first, then parent
+            from database.models import (
+                Answer, EnglishAnalysis, InterviewAnalysis, LearningTopic,
+                Metrics, Question, QuestionReview, Recommendation,
+                Transcript, TranscriptCorrection, VocabularyItem,
+            )
+
+            # Learning topics reference recommendations by UUID
+            rec = session.execute(
+                select(Recommendation).where(Recommendation.interview_id == interview_id)
+            ).scalar_one_or_none()
+            if rec:
+                session.execute(delete(LearningTopic).where(LearningTopic.recommendation_id == rec.id))
+
+            # All tables with interview_id FK
+            for model in [
+                Answer, Question, Transcript,
+                InterviewAnalysis, EnglishAnalysis, VocabularyItem,
+                QuestionReview, TranscriptCorrection, Recommendation, Metrics,
+            ]:
+                session.execute(delete(model).where(model.interview_id == interview_id))
+
+            session.delete(interview)
+            session.commit()
+            return True
