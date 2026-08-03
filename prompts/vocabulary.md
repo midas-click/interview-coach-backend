@@ -36,7 +36,7 @@ Return ONLY valid JSON:
   ]
 }
 
-Return 10–15 phrases. Focus on interviewer speech only.
+Return ALL useful phrases from the interviewer's speech. Do not limit the count.
 
 ## Input
 
