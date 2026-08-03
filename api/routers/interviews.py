@@ -23,7 +23,7 @@ from models.agent_outputs import VocabularyPhrase
 from repositories.analyses import AnalysisRepository
 from repositories.interviews import InterviewRepository
 
-router = APIRouter(prefix="/interviews", tags=["interviews"])
+router = APIRouter(prefix="/api/interviews", tags=["interviews"])
 
 
 def _summary(row: Any) -> InterviewSummary:
@@ -83,6 +83,7 @@ def get_interview(
         answers=[
             {
                 "id": str(a.id),
+                "question_id": str(a.question_id) if a.question_id else None,
                 "sequence": a.sequence,
                 "text": a.text,
                 "speaker": a.speaker,
