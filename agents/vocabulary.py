@@ -1,4 +1,4 @@
-"""Vocabulary Agent — extracts useful phrases from interviewer speech."""
+"""Vocabulary Agent — extracts phrases from interviewer speech only."""
 
 from __future__ import annotations
 
@@ -7,16 +7,17 @@ from sdk.agent import AgentContext, BaseAgent
 
 
 class VocabularyAgent(BaseAgent):
-    """Extracts reusable English phrases from the interviewer's speech."""
+    """Extracts reusable English phrases. Feeds only interviewer speech to save tokens."""
 
     name = "vocabulary"
     prompt_name = "vocabulary"
 
     async def _execute(self, context: AgentContext) -> dict:
+        interviewer = self._filter_transcript(context.transcript, "interviewer")
         prompt = self._prompts.render(
             self.prompt_name,
             interview_id=context.interview_id,
-            transcript=self._transcript_json(context.transcript),
+            transcript=self._transcript_json(interviewer),
         )
         response = await self._llm.complete_json(
             system=prompt,

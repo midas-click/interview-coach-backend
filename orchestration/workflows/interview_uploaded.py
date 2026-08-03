@@ -186,10 +186,12 @@ class InterviewUploadedWorkflow:
         segs = result.structured_output.get("corrected_transcript", [])
         if not segs:
             return original
+        # Strip internal _global_idx before constructing model.
+        clean_segs = [{k: v for k, v in s.items() if k != "_global_idx"} for s in segs]
         return TranscriptData(
             meeting_id=original.meeting_id,
             company_name=original.company_name,
             interview_stage=original.interview_stage,
             language=original.language,
-            transcript=[TranscriptSegment.model_validate(s) for s in segs],
+            transcript=[TranscriptSegment.model_validate(s) for s in clean_segs],
         )

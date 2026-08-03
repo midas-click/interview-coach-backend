@@ -106,6 +106,33 @@ class BaseAgent(ABC):
         import json as _json
         return _json.dumps([s.model_dump() for s in transcript.transcript], indent=2)
 
+    @staticmethod
+    def _chunk_segments(segments: list, size: int, overlap: int = 0) -> list[list]:
+        """Split segments into overlapping batches for chunked LLM calls."""
+        batches = []
+        i = 0
+        while i < len(segments):
+            batch = segments[i:i + size]
+            batches.append(batch)
+            i += size - overlap
+        return batches
+
+    @staticmethod
+    def _filter_transcript(transcript: Any, speaker: str) -> Any:
+        """Return a copy of the transcript containing only one speaker's segments."""
+        from models.transcript import TranscriptData as _TD
+        filtered = [s for s in transcript.transcript if s.speaker.lower() == speaker.lower()]
+        if not filtered:
+            return transcript  # fallback to full transcript
+        return _TD(
+            meeting_id=transcript.meeting_id,
+            company_name=transcript.company_name,
+            interview_stage=transcript.interview_stage,
+            language=transcript.language,
+            created_at=transcript.created_at,
+            transcript=filtered,
+        )
+
 
 class AgentRegistry:
     """Factory registry: agent name → callable returning a configured agent."""
