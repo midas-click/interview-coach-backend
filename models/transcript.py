@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class TranscriptSegment(BaseModel):
@@ -16,12 +16,11 @@ class TranscriptSegment(BaseModel):
     confidence: float = 0.0
     text: str
 
-    @field_validator("end")
-    @classmethod
-    def end_after_start(cls, end: float, info: Any) -> float:
-        if end < info.data.get("start", 0.0):
-            raise ValueError(f"end ({end}) before start")
-        return end
+    @model_validator(mode="after")
+    def fix_backward_timestamps(self) -> "TranscriptSegment":
+        if self.end < self.start:
+            self.start, self.end = self.end, self.start
+        return self
 
 
 class TranscriptData(BaseModel):

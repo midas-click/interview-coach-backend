@@ -22,5 +22,6 @@ class VocabularyAgent(BaseAgent):
         response = await self._llm.complete_json(
             system=prompt,
             user="Extract useful phrases from the interviewer's speech.",
+            max_tokens=16384,
         )
         return VocabularyResult.model_validate(response.parsed).model_dump()

@@ -19,11 +19,12 @@ def test_requires_at_least_one_segment() -> None:
         TranscriptData.model_validate(sample_transcript(transcript=[]))
 
 
-def test_rejects_end_before_start() -> None:
+def test_swaps_end_before_start() -> None:
+    """Backward timestamps are silently swapped instead of rejected."""
     data = sample_transcript()
     data["transcript"][0]["end"] = -1.0
-    with pytest.raises(ValidationError):
-        TranscriptData.model_validate(data)
+    instance = TranscriptData.model_validate(data)
+    assert instance.transcript[0].start <= instance.transcript[0].end
 
 
 def test_ignores_unknown_fields() -> None:
