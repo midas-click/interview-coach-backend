@@ -14,7 +14,7 @@ def _event_message(**overrides: object) -> str:
         "source": "aws.s3",
         "account": "123456789012",
         "time": "2025-01-01T00:00:00Z",
-        "region": "us-east-1",
+        "region": "us-east-2",
         "resources": ["arn:aws:s3:::my-bucket"],
         "detail": {
             "version": "0",

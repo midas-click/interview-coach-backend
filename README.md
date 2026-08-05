@@ -126,4 +126,4 @@ See `../docs/deployment.md` for full AWS deployment guide.
 | `DATABASE_URL` | `postgresql+psycopg://...` | PostgreSQL connection |
 | `INNGEST_DEV` | `true` | Dev server mode |
 | `SQS_QUEUE_URL` | — | SQS queue (production) |
-| `AWS_REGION` | `us-east-1` | AWS region |
+| `AWS_REGION` | `us-east-2` | AWS region |

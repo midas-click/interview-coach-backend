@@ -43,7 +43,7 @@ services:
       INNGEST_EVENT_API_BASE_URL: http://inngest:8288
       INNGEST_SERVE_ORIGIN: http://api:8000
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
-      AWS_REGION: us-east-1
+      AWS_REGION: us-east-2
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
       SQS_QUEUE_URL: ${SQS_QUEUE_URL:-}
@@ -67,7 +67,7 @@ services:
       INNGEST_EVENT_KEY: local
       INNGEST_EVENT_API_BASE_URL: http://inngest:8288
       SQS_QUEUE_URL: ${SQS_QUEUE_URL:-}
-      AWS_REGION: us-east-1
+      AWS_REGION: us-east-2
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
     depends_on:
