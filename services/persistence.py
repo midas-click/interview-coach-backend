@@ -43,7 +43,7 @@ class PersistenceService:
             interview_id,
             company_name=transcript.company_name,
             interview_stage=transcript.interview_stage,
-            language=transcript.language,
+            language=transcript.transcriber.language,
         )
         self._interviews.save_transcript(
             interview_id,

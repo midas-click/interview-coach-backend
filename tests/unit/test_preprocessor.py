@@ -12,12 +12,12 @@ from services.transcript_preprocessor import (
 
 def sample_transcript(**kw) -> TranscriptData:
     return TranscriptData(
-        meeting_id="t1", language="en",
-        transcript=[
-            TranscriptSegment(speaker="Interviewer", start=0.0, end=2.0, text="Hello, welcome."),
-            TranscriptSegment(speaker="Interviewer", start=0.0, end=3.5, text="Hello, welcome to the interview."),
-            TranscriptSegment(speaker="Candidate", start=3.5, end=4.0, text="Thank"),
-            TranscriptSegment(speaker="Candidate", start=4.2, end=5.0, text="you."),
+        interview_id="t1", language="en",
+        utterances=[
+            TranscriptSegment(speaker="interviewer", start=0.0, end=2.0, text="Hello, welcome."),
+            TranscriptSegment(speaker="interviewer", start=0.0, end=3.5, text="Hello, welcome to the interview."),
+            TranscriptSegment(speaker="candidate", start=3.5, end=4.0, text="Thank"),
+            TranscriptSegment(speaker="candidate", start=4.2, end=5.0, text="you."),
             TranscriptSegment(speaker="Candidate", start=5.5, end=10.0, text="I'm happy to be here."),
         ],
         **kw,
@@ -68,8 +68,8 @@ def test_clean_trailing_dash() -> None:
 def test_full_pipeline() -> None:
     # Simulate the STT chunking pattern the user described.
     data = TranscriptData(
-        meeting_id="t1", language="en",
-        transcript=[
+        interview_id="t1", language="en",
+        utterances=[
             # Overlapping refinements (same start time)
             TranscriptSegment(speaker="A", start=12.35, end=14.12, text="Hi, Thank you for joining."),
             TranscriptSegment(speaker="A", start=12.35, end=15.18, text="The solution that we provide is our track."),
@@ -85,4 +85,4 @@ def test_full_pipeline() -> None:
     result = preprocess(data, gap_threshold=1.0)
     # Overlaps deduplicated: only 1 segment from the 12.35 bucket (longest + highest confidence)
     # Consecutive A segments merged: 29.7–32.96 + 33.0–35.0 → 29.7–35.0
-    assert len(result.transcript) <= 3
+    assert len(result.utterances) <= 3

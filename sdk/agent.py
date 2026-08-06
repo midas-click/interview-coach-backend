@@ -125,12 +125,14 @@ class BaseAgent(ABC):
         if not filtered:
             return transcript  # fallback to full transcript
         return _TD(
-            meeting_id=transcript.meeting_id,
+            interview_id=transcript.interview_id,
             company_name=transcript.company_name,
             interview_stage=transcript.interview_stage,
-            language=transcript.language,
+            schema_version=transcript.schema_version,
+            transcriber=transcript.transcriber,
             created_at=transcript.created_at,
-            transcript=filtered,
+            language=transcript.language,
+            utterances=filtered,
         )
 
 

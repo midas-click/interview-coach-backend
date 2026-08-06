@@ -46,14 +46,18 @@ class FakeLLM(LLMClient):
 
 def sample_transcript(**overrides: Any) -> dict[str, Any]:
     data: dict[str, Any] = {
-        "meetingId": "itv-001",
-        "companyName": "Acme Corp",
-        "interviewStage": "technical",
-        "createdAt": "2025-01-01T10:00:00Z",
-        "language": "en",
-        "transcript": [
-            {"speaker": "Interviewer", "start": 0.0, "end": 3.0, "confidence": 0.9, "text": "Tell me about yourself."},
-            {"speaker": "Candidate", "start": 3.0, "end": 9.0, "confidence": 0.8, "text": "I have five years of backend experience."},
+        "schemaVersion": 1,
+        "interviewId": "itv-001",
+        "company": "Acme Corp",
+        "stage": "technical",
+        "transcriber": {
+            "model": "whisper-base",
+            "language": "en",
+            "createdAt": "2025-01-01T10:00:00Z",
+        },
+        "utterances": [
+            {"id": 1, "speaker": "interviewer", "startMs": 0, "endMs": 3000, "confidence": -0.4, "text": "Tell me about yourself."},
+            {"id": 2, "speaker": "candidate", "startMs": 3000, "endMs": 9000, "confidence": -0.3, "text": "I have five years of backend experience."},
         ],
     }
     data.update(overrides)

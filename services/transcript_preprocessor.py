@@ -28,12 +28,14 @@ def preprocess(transcript: TranscriptData, gap_threshold: float = 1.0) -> Transc
     merged = _merge_consecutive(deduped, gap_threshold)
 
     return TranscriptData(
-        meeting_id=transcript.meeting_id,
+        interview_id=transcript.interview_id,
         company_name=transcript.company_name,
         interview_stage=transcript.interview_stage,
+        schema_version=transcript.schema_version,
+        transcriber=transcript.transcriber,
         created_at=transcript.created_at,
         language=transcript.language,
-        transcript=merged,
+        utterances=merged,
     )
 
 
