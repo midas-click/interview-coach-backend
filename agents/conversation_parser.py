@@ -10,8 +10,8 @@ import json
 from models.agent_outputs import ConversationParseResult
 from sdk.agent import AgentContext, BaseAgent
 
-BATCH_SIZE = 15
-OVERLAP = 2
+BATCH_SIZE = 50
+OVERLAP = 10
 
 
 class ConversationParser(BaseAgent):
@@ -54,6 +54,6 @@ class ConversationParser(BaseAgent):
         response = await self._llm.complete_json(
             system=prompt,
             user="Parse this interview transcript into structured questions and answers.",
-            max_tokens=4096,
+            max_tokens=8192,
         )
         return ConversationParseResult.model_validate(response.parsed).model_dump()

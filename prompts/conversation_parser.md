@@ -23,6 +23,9 @@ Rules:
 - Every question and answer gets a short id ("q1", "a1", …).
 - Answers should reference the question id they belong to.
 - DO NOT output a timeline — only questions and answers.
+- **Summarize each answer into 1–2 rich sentences** — capture the key points,
+  examples, and technical details the candidate mentioned, not just a
+  one-liner. Preserve specific numbers, technologies, and achievements.
 
 Return ONLY valid JSON:
 

@@ -53,18 +53,19 @@ class InterviewUploadedWorkflow:
         )
         corrected = self._apply_corrections(processed, tc_result)
 
-        await step.run(
-            "persist-corrections",
-            lambda: self._persist.persist_transcript_corrections(iid, tc_result)
-            if tc_result.status == "success" else None,
-        )
-
-        # 4. Save RAW transcript + create interview record
+        # 4. Create interview record FIRST (FK for everything else)
         await step.run(
             "ensure-interview",
             lambda: self._persist.ensure_interview(iid, transcript, bucket, key),
         )
         await step.run("mark-processing", lambda: self._persist.mark_processing(iid))
+
+        # 4b. Now persist corrections (FK to interviews is satisfied)
+        await step.run(
+            "persist-corrections",
+            lambda: self._persist.persist_transcript_corrections(iid, tc_result)
+            if tc_result.status == "success" else None,
+        )
 
         # 5. Parse conversation
         parse_result = await self._step_agent(

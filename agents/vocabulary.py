@@ -7,7 +7,7 @@ from sdk.agent import AgentContext, BaseAgent
 
 
 class VocabularyAgent(BaseAgent):
-    """Extracts reusable English phrases. Feeds only interviewer speech to save tokens."""
+    """Extracts reusable English phrases. Feeds only interviewer speech."""
 
     name = "vocabulary"
     prompt_name = "vocabulary"

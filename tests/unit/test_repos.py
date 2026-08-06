@@ -75,10 +75,10 @@ def test_save_transcript_writes_once(interview_repo) -> None:
     assert t is not None
     assert t.raw_json == {"a": 1}
 
-    # Second write must not overwrite raw_json.
+    # Second write NOW overwrites raw_json (fresh run = fresh data).
     interview_repo.save_transcript("itv-4", bucket="b", object_key="k", raw_json={"a": 2}, parsed_timeline=[{"x": "y"}])
     t2 = interview_repo.get_transcript("itv-4")
-    assert t2.raw_json == {"a": 1}  # preserved
+    assert t2.raw_json == {"a": 2}   # overwritten with new data
     assert t2.parsed_timeline == [{"x": "y"}]
 
 

@@ -8,7 +8,11 @@ from typing import Any
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from database.models import Answer, Interview, Question, Transcript
+from database.models import (
+    Answer, EnglishAnalysis, Interview, InterviewAnalysis,
+    LearningTopic, Metrics, Question, QuestionReview,
+    Recommendation, Transcript, TranscriptCorrection, VocabularyItem,
+)
 
 SessionFactory = Callable[[], Session]
 
@@ -88,11 +92,16 @@ class InterviewRepository:
         parsed_timeline: list[dict[str, Any]] | None = None,
     ) -> None:
         with self._session_factory() as session:
+            # Clear stale analysis data so a fresh run starts clean.
+            self._clear_analyses(session, interview_id)
+
             existing = session.execute(
                 select(Transcript).where(Transcript.interview_id == interview_id)
             ).scalar_one_or_none()
             if existing is not None:
-                # Never overwrite the raw transcript.
+                existing.s3_bucket = bucket
+                existing.s3_object_key = object_key
+                existing.raw_json = raw_json
                 existing.parsed_timeline = parsed_timeline
             else:
                 session.add(
@@ -111,6 +120,27 @@ class InterviewRepository:
             return session.execute(
                 select(Transcript).where(Transcript.interview_id == interview_id)
             ).scalar_one_or_none()
+
+    # ── clear analyses for fresh run ────────────────────────────────────
+
+    @staticmethod
+    def _clear_analyses(session: Session, interview_id: str) -> None:
+        """Delete all analysis data so a fresh workflow starts clean."""
+        # Delete children before parents (FK order).
+        session.execute(
+            delete(LearningTopic).where(
+                LearningTopic.recommendation_id.in_(
+                    select(Recommendation.id).where(Recommendation.interview_id == interview_id)
+                )
+            )
+        )
+        for model in [
+            InterviewAnalysis, EnglishAnalysis, VocabularyItem,
+            QuestionReview, TranscriptCorrection, Recommendation,
+            Metrics,
+        ]:
+            session.execute(delete(model).where(model.interview_id == interview_id))
+        session.flush()
 
     # ── Q / A ───────────────────────────────────────────────────────────
 

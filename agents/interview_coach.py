@@ -25,6 +25,6 @@ class InterviewCoach(BaseAgent):
         response = await self._llm.complete_json(
             system=prompt,
             user="Evaluate this interview and return the structured JSON assessment.",
-            max_tokens=4096,
+            max_tokens=8192,
         )
         return InterviewCoachResult.model_validate(response.parsed).model_dump()
