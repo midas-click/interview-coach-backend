@@ -68,6 +68,34 @@ def test_list_paginates(interview_repo) -> None:
 
 # ── Transcript ─────────────────────────────────────────────────────────────
 
+def test_persist_parser_result_keeps_raw_transcript(interview_repo, analysis_repo) -> None:
+    """Regression: persisting parsed Q/A must not clobber the raw transcript row."""
+    from sdk.agent import AgentResult
+    from services.persistence import PersistenceService
+
+    interview_repo.create_if_missing("itv-10", company_name="ACME", interview_stage="tech", language="en")
+    interview_repo.save_transcript(
+        "itv-10", bucket="b", object_key="k", raw_json={"utterances": [{"text": "hello"}]}
+    )
+
+    svc = PersistenceService(interview_repo, analysis_repo)
+    svc.persist_parser_result(
+        "itv-10",
+        AgentResult(
+            agent="conversation_parser",
+            structured_output={
+                "questions": [{"id": "q1", "sequence": 1, "text": "Q?", "speaker": "Interviewer"}],
+                "answers": [],
+            },
+        ),
+    )
+
+    t = interview_repo.get_transcript("itv-10")
+    assert t is not None
+    assert t.raw_json == {"utterances": [{"text": "hello"}]}  # not overwritten with {}
+    assert len(interview_repo.get_questions("itv-10")) == 1
+
+
 def test_save_transcript_writes_once(interview_repo) -> None:
     interview_repo.create_if_missing("itv-4", company_name=None, interview_stage=None, language="en")
     interview_repo.save_transcript("itv-4", bucket="b", object_key="k", raw_json={"a": 1})

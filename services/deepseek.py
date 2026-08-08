@@ -5,10 +5,11 @@ from __future__ import annotations
 import asyncio
 import json
 import random
+import re
 import time
 from typing import Any
 
-from openai import AsyncOpenAI
+from openai import APIConnectionError, APITimeoutError, AsyncOpenAI
 
 from common.config import Settings
 from common.logging import get_logger
@@ -27,6 +28,13 @@ _RETRYABLE_STATUSES = {429, 500, 502, 503, 504}
 
 class DeepSeekError(RuntimeError):
     """Raised when the DeepSeek API fails after all retries."""
+
+
+class InvalidJSONError(DeepSeekError):
+    """The model's response could not be parsed as a JSON object."""
+
+
+_JSON_CODE_FENCE_RE = re.compile(r"```(?:json)?\s*(.*?)```", re.DOTALL)
 
 
 class RateLimiter:
@@ -112,7 +120,13 @@ class DeepSeekClient(LLMClient):
                 )
             except Exception as exc:  # noqa: BLE001
                 status = self._status_of(exc)
-                if status not in _RETRYABLE_STATUSES or attempt > self._max_retries:
+                is_transport_error = isinstance(exc, (APIConnectionError, APITimeoutError))
+                is_invalid_json = isinstance(exc, InvalidJSONError)
+                if (
+                    status not in _RETRYABLE_STATUSES
+                    and not is_transport_error
+                    and not is_invalid_json
+                ) or attempt > self._max_retries:
                     logger.error(
                         "deepseek call failed",
                         extra={
@@ -143,13 +157,48 @@ class DeepSeekClient(LLMClient):
 
     @staticmethod
     def _parse_json(content: str) -> dict[str, Any]:
+        candidates = [content]
+        extracted = DeepSeekClient._extract_json_object(content)
+        if extracted is not None and extracted != content.strip():
+            candidates.append(extracted)
+        for candidate in candidates:
+            try:
+                parsed: Any = json.loads(candidate)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(parsed, dict):
+                raise InvalidJSONError(
+                    f"model returned non-object JSON: {type(parsed).__name__}"
+                )
+            if candidate is not content:
+                logger.warning(
+                    "model returned JSON embedded in other text — recovered it",
+                    extra={"recovered_chars": len(extracted)},
+                )
+            return parsed
+        # Nothing parsed — report where the best candidate broke.
+        best = extracted if extracted is not None else content
         try:
-            parsed: Any = json.loads(content)
+            json.loads(best)
         except json.JSONDecodeError as exc:
-            raise DeepSeekError(f"model returned invalid JSON: {content[:200]}") from exc
-        if not isinstance(parsed, dict):
-            raise DeepSeekError(f"model returned non-object JSON: {type(parsed).__name__}")
-        return parsed
+            window = best[max(0, exc.pos - 80) : exc.pos + 80]
+            raise InvalidJSONError(
+                f"model returned invalid JSON at offset {exc.pos}/{len(best)}: …{window}…"
+            ) from exc
+        raise InvalidJSONError("model returned invalid JSON")
+
+    @staticmethod
+    def _extract_json_object(content: str) -> str | None:
+        """Pull an outer JSON object out of surrounding text (fences, prose)."""
+        text = content.lstrip("\ufeff \t\r\n")
+        m = _JSON_CODE_FENCE_RE.search(text)
+        if m:
+            text = m.group(1).strip()
+        start = text.find("{")
+        end = text.rfind("}")
+        if start == -1 or end == -1 or end < start:
+            return None
+        return text[start : end + 1]
 
     @staticmethod
     def _status_of(exc: Exception) -> int:

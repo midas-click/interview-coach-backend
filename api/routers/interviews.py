@@ -26,6 +26,20 @@ from repositories.interviews import InterviewRepository
 router = APIRouter(prefix="/api/interviews", tags=["interviews"])
 
 
+def _normalise_segments(raw_json: dict) -> list[dict]:
+    """Convert raw_json segments to frontend-compatible format (no mutation)."""
+    segments = raw_json.get("utterances", raw_json.get("transcript", []))
+    out: list[dict] = []
+    for s in segments:
+        item = dict(s)
+        if "startMs" in item:
+            item["start"] = item.pop("startMs") / 1000.0
+        if "endMs" in item:
+            item["end"] = item.pop("endMs") / 1000.0
+        out.append(item)
+    return out
+
+
 def _summary(row: Any) -> InterviewSummary:
     return InterviewSummary(
         id=str(row.id),
@@ -78,7 +92,7 @@ def get_interview(
         status=interview.status,
         created_at=interview.created_at,
         updated_at=interview.updated_at,
-        transcript_segments=transcript.raw_json.get("transcript", []) if transcript else [],
+        transcript_segments=_normalise_segments(transcript.raw_json) if transcript else [],
         questions=[
             {
                 "id": str(q.id),

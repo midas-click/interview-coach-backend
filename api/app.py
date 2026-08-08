@@ -28,7 +28,6 @@ from services.persistence import PersistenceService
 from services.s3 import DevTranscriptSource, S3TranscriptSource, TranscriptSource
 from services.prompts import PromptStore
 from database.models import Base
-from database.models import Base
 from database.session import build_session_factory_from_settings, init_db
 
 

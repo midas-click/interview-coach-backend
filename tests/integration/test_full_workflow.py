@@ -71,7 +71,7 @@ async def main() -> None:
     print(f"    {result.status.value} | {result.execution_time:.1f}s")
     if result.status.value == "success":
         p = result.structured_output
-        print(f"    Q: {len(p['questions'])}  A: {len(p['answers'])}  Timeline: {len(p['timeline'])}")
+        print(f"    Q: {len(p['questions'])}  A: {len(p['answers'])}")
         persistence.persist_parser_result(iid, result)
 
     # 3 — parallel analysis

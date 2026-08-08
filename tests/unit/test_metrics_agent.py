@@ -15,7 +15,7 @@ def metrics_agent() -> MetricsAgent:
 
 async def test_computes_basic_metrics(metrics_agent: MetricsAgent) -> None:
     data = sample_transcript(
-        transcript=[
+        utterances=[
             {"speaker": "Interviewer", "start": 0, "end": 3, "text": "What is your experience?"},
             {"speaker": "Candidate", "start": 3, "end": 10, "text": "I have five years of backend engineering experience."},
             {"speaker": "Interviewer", "start": 10, "end": 12, "text": "Great, tell me more."},
@@ -37,7 +37,7 @@ async def test_computes_basic_metrics(metrics_agent: MetricsAgent) -> None:
 
 async def test_no_candidate_speech(metrics_agent: MetricsAgent) -> None:
     data = sample_transcript(
-        transcript=[
+        utterances=[
             {"speaker": "Interviewer", "start": 0, "end": 3, "text": "Welcome to the interview."},
         ]
     )

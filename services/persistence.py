@@ -73,7 +73,6 @@ class PersistenceService:
         output: dict[str, Any] = result.structured_output or {}
         questions: list[dict[str, Any]] = output.get("questions", [])
         answers: list[dict[str, Any]] = output.get("answers", [])
-        timeline: list[dict[str, Any]] = output.get("timeline", [])
 
         self._interviews.replace_questions(interview_id, questions)
 
@@ -85,15 +84,6 @@ class PersistenceService:
                 q_ref_to_id[q["id"]] = db_questions[i].id
 
         self._interviews.replace_answers(interview_id, answers, q_ref_to_id)
-
-        # Attach timeline to the transcript row.
-        self._interviews.save_transcript(
-            interview_id,
-            bucket="",
-            object_key="",
-            raw_json={},
-            parsed_timeline=timeline or None,
-        )
 
     # ── analysis agents ─────────────────────────────────────────────────
 

@@ -30,42 +30,42 @@ def test_healthz(client: TestClient) -> None:
 
 
 def test_list_interviews_empty(client: TestClient) -> None:
-    resp = client.get("/interviews")
+    resp = client.get("/api/interviews")
     assert resp.status_code == 200
     assert resp.json() == []
 
 
 def test_get_interview_not_found(client: TestClient) -> None:
-    resp = client.get("/interviews/nonexistent")
+    resp = client.get("/api/interviews/nonexistent")
     assert resp.status_code == 404
 
 
 def test_get_analysis_empty(client: TestClient) -> None:
-    resp = client.get("/interviews/nonexistent/analysis")
+    resp = client.get("/api/interviews/nonexistent/analysis")
     assert resp.status_code == 200
     assert resp.json()["analysis"] is None
 
 
 def test_get_english_empty(client: TestClient) -> None:
-    resp = client.get("/interviews/nonexistent/english")
+    resp = client.get("/api/interviews/nonexistent/english")
     assert resp.status_code == 200
     assert resp.json()["english"] is None
 
 
 def test_get_vocabulary_empty(client: TestClient) -> None:
-    resp = client.get("/interviews/nonexistent/vocabulary")
+    resp = client.get("/api/interviews/nonexistent/vocabulary")
     assert resp.status_code == 200
     assert resp.json()["phrases"] == []
 
 
 def test_get_metrics_empty(client: TestClient) -> None:
-    resp = client.get("/interviews/nonexistent/metrics")
+    resp = client.get("/api/interviews/nonexistent/metrics")
     assert resp.status_code == 200
     assert resp.json()["metrics"] is None
 
 
 def test_get_recommendations_empty(client: TestClient) -> None:
-    resp = client.get("/interviews/nonexistent/recommendations")
+    resp = client.get("/api/interviews/nonexistent/recommendations")
     assert resp.status_code == 200
     assert resp.json()["recommendation"] is None
 

@@ -1,63 +1,77 @@
 {
-  "meetingId": "demo-001",
-  "companyName": "TechCorp",
-  "interviewStage": "technical",
-  "createdAt": "2025-07-31T14:00:00Z",
+  "schemaVersion": 1,
+  "interviewId": "demo-001",
+  "company": "TechCorp",
+  "stage": "technical",
+  "transcriber": {
+    "model": "whisper-base",
+    "language": "en",
+    "createdAt": null
+  },
+  "createdAt": "2025-07-31T14:00:00+00:00",
   "language": "en",
-  "transcript": [
+  "utterances": [
     {
-      "speaker": "Interviewer",
-      "start": 0.0,
-      "end": 4.0,
+      "id": null,
+      "speaker": "interviewer",
+      "startMs": 0,
+      "endMs": 4000,
       "confidence": 0.95,
       "text": "Welcome to the interview. Could you tell me about your background and experience?"
     },
     {
-      "speaker": "Candidate",
-      "start": 4.0,
-      "end": 22.0,
+      "id": null,
+      "speaker": "candidate",
+      "startMs": 4000,
+      "endMs": 22000,
       "confidence": 0.88,
       "text": "Yes, of course. I have been working as a backend engineer for about six years now. I started at a startup where I built REST APIs with Python and Flask, and then I moved to a larger company where I've been leading a team of four engineers for the past two years building microservices with FastAPI and PostgreSQL."
     },
     {
-      "speaker": "Interviewer",
-      "start": 23.0,
-      "end": 30.0,
+      "id": null,
+      "speaker": "interviewer",
+      "startMs": 23000,
+      "endMs": 30000,
       "confidence": 0.92,
       "text": "That's great. Can you walk me through a challenging technical problem you solved recently?"
     },
     {
-      "speaker": "Candidate",
-      "start": 30.0,
-      "end": 55.0,
+      "id": null,
+      "speaker": "candidate",
+      "startMs": 30000,
+      "endMs": 55000,
       "confidence": 0.85,
       "text": "Um, yeah. So we had this problem where our database queries were getting really slow under load. The, uh, the main issue was that we didn't have proper indexing and our queries were doing full table scans. I looked at the slow query logs, identified the problematic queries, and added composite indexes which brought the response time down from like three seconds to under 50 milliseconds. I also implemented connection pooling which helped with the concurrent connections."
     },
     {
-      "speaker": "Interviewer",
-      "start": 56.0,
-      "end": 64.0,
-      "confidence": 0.90,
+      "id": null,
+      "speaker": "interviewer",
+      "startMs": 56000,
+      "endMs": 64000,
+      "confidence": 0.9,
       "text": "Excellent. How do you handle disagreements within your engineering team?"
     },
     {
-      "speaker": "Candidate",
-      "start": 65.0,
-      "end": 90.0,
+      "id": null,
+      "speaker": "candidate",
+      "startMs": 65000,
+      "endMs": 90000,
       "confidence": 0.87,
       "text": "Well, I think it's really important to focus on the data and not on personal opinions. Like in my current team, we had a debate about whether to use MongoDB or PostgreSQL for a new service. Instead of just arguing, I suggested we do a small proof of concept with both and compare the results. After like two weeks of testing, the data clearly showed that PostgreSQL was better for our use case, so everyone agreed. I think the key is to stay objective and, you know, keep the discussion focused on what's best for the project."
     },
     {
-      "speaker": "Interviewer",
-      "start": 91.0,
-      "end": 98.0,
+      "id": null,
+      "speaker": "interviewer",
+      "startMs": 91000,
+      "endMs": 98000,
       "confidence": 0.93,
       "text": "Where do you see yourself in five years?"
     },
     {
-      "speaker": "Candidate",
-      "start": 99.0,
-      "end": 118.0,
+      "id": null,
+      "speaker": "candidate",
+      "startMs": 99000,
+      "endMs": 118000,
       "confidence": 0.84,
       "text": "That's a good question. I see myself growing into a staff engineer role where I can have broader impact across multiple teams. I'm not just interested in the technical side — I also want to get better at mentoring junior engineers and contributing to architecture decisions at a higher level. I've actually been reading a lot about system design patterns and distributed systems lately to prepare for that."
     }

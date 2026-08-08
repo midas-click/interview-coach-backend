@@ -2,6 +2,10 @@
 
 Computes: average answer length, words per minute, longest/shortest answers,
 repeated words, filler words, speaking ratio, question/answer counts.
+
+Counts are derived from raw speaker-tagged segments: candidate = "candidate"/"me",
+interviewer = "interviewer". Unlabeled segments ("unknown") are excluded from
+both counts rather than counted as interviewers.
 """
 
 from __future__ import annotations
@@ -34,7 +38,7 @@ class MetricsAgent(BaseAgent):
         def _is_candidate(speaker: str) -> bool:
             return speaker.lower() in ("candidate", "me")
         def _is_interviewer(speaker: str) -> bool:
-            return speaker.lower() in ("interviewer", "unknown")
+            return speaker.lower() == "interviewer"
 
         candidate_texts = [s.text for s in segments if _is_candidate(s.speaker)]
         interviewer_texts = [s.text for s in segments if _is_interviewer(s.speaker)]
