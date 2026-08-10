@@ -23,7 +23,7 @@ logger = get_logger("services.sqs_consumer")
 class EventPublisher(Protocol):
     """Sends interview/uploaded events to Inngest."""
 
-    def publish_interview_uploaded(
+    async def publish_interview_uploaded(
         self, *, interview_id: str, bucket: str, object_key: str
     ) -> None:
         ...
@@ -120,7 +120,7 @@ class SQSConsumer:
                 processed += 1
                 continue
             try:
-                self._publisher.publish_interview_uploaded(**parsed)
+                await self._publisher.publish_interview_uploaded(**parsed)
             except Exception:
                 logger.exception(
                     "failed to publish event — message stays in queue",

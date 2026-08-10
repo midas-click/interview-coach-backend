@@ -28,7 +28,7 @@ class InngestEventPublisher:
             is_production=not settings.inngest_dev,
         )
 
-    def publish_interview_uploaded(
+    async def publish_interview_uploaded(
         self, *, interview_id: str, bucket: str, object_key: str
     ) -> None:
         event = inngest.Event(
@@ -39,7 +39,7 @@ class InngestEventPublisher:
                 "object_key": object_key,
             },
         )
-        ids = self._client.send(event)
+        ids = await self._client.send(event)
         logger.info(
             "published interview/uploaded",
             extra={

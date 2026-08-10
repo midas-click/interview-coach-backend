@@ -1,0 +1,94 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  AWS_REGION: us-east-2
+  ECR_API_REPO: interview-intelligence-api
+  ECR_WORKER_REPO: interview-intelligence-worker
+
+jobs:
+  # ── Lint ─────────────────────────────────────────────────────────────
+  lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+      - run: pip install ruff
+      - run: ruff check .
+
+  # ── Tests ────────────────────────────────────────────────────────────
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+      - run: pip install -e ".[dev]"
+      - run: pytest -q --tb=short
+
+  # ── Build & Push Docker ──────────────────────────────────────────────
+  build-and-push:
+    if: github.ref == 'refs/heads/main'
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: aws-actions/amazon-ecr-login@v2
+      - uses: docker/build-push-action@v6
+        with:
+          context: backend
+          file: backend/docker/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.ECR_REGISTRY }}/${{ env.ECR_API_REPO }}:${{ github.sha }}
+            ${{ secrets.ECR_REGISTRY }}/${{ env.ECR_API_REPO }}:latest
+            ${{ secrets.ECR_REGISTRY }}/${{ env.ECR_WORKER_REPO }}:${{ github.sha }}
+            ${{ secrets.ECR_REGISTRY }}/${{ env.ECR_WORKER_REPO }}:latest
+
+  # ── Deploy ECS ───────────────────────────────────────────────────────
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: [build-and-push]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Deploy API
+        run: |
+          aws ecs update-service \
+            --cluster interview-intelligence \
+            --service interview-intelligence-api \
+            --force-new-deployment
+      - name: Deploy Worker
+        run: |
+          aws ecs update-service \
+            --cluster interview-intelligence \
+            --service interview-intelligence-worker \
+            --force-new-deployment
