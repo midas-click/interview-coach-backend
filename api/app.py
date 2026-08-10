@@ -6,29 +6,26 @@ into a single ASGI application.
 
 from __future__ import annotations
 
-from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import inngest as inngest_lib
 from inngest.fast_api import serve as inngest_serve
 
-from api.deps import get_settings
+from agents import build_registry
 from api.middleware import add_request_id_middleware
 from api.routers.interviews import router as interviews_router
-from agents import build_registry
 from common.config import Settings
 from common.logging import setup_logging
+from database.session import build_session_factory_from_settings, init_db
 from orchestration.client import build_inngest_client
 from orchestration.functions.interview_uploaded import make_interview_uploaded_fn
 from repositories.analyses import AnalysisRepository
 from repositories.interviews import InterviewRepository
-from services.deepseek import DeepSeekClient, DeepSeekError
+from services.deepseek import DeepSeekClient
 from services.persistence import PersistenceService
-from services.s3 import DevTranscriptSource, S3TranscriptSource, TranscriptSource
 from services.prompts import PromptStore
-from database.models import Base
-from database.session import build_session_factory_from_settings, init_db
+from services.s3 import DevTranscriptSource, S3TranscriptSource, TranscriptSource
 
 
 def create_app(settings: Settings | None = None, *, session_factory: Any = None) -> FastAPI:
@@ -44,6 +41,7 @@ def create_app(settings: Settings | None = None, *, session_factory: Any = None)
         init_db(settings)
     elif settings.database_url.startswith("postgres"):
         from alembic.config import Config
+
         from alembic import command
         alembic_cfg = Config("alembic.ini")
         alembic_cfg.set_main_option("sqlalchemy.url", settings.database_url)
@@ -55,7 +53,6 @@ def create_app(settings: Settings | None = None, *, session_factory: Any = None)
     try:
         llm = DeepSeekClient(settings)
     except ValueError:
-        from sdk.llm import LLMClient
         from common.logging import get_logger as _get_logger
         _get_logger(__name__).warning("DEEPSEEK_API_KEY not set — LLM agents will be unavailable")
         llm = None  # type: ignore[assignment]

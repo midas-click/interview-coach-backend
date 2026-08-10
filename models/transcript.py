@@ -46,7 +46,7 @@ class TranscriptSegment(BaseModel):
         return self.end_ms / 1000.0
 
     @model_validator(mode="after")
-    def fix_backward_timestamps(self) -> "TranscriptSegment":
+    def fix_backward_timestamps(self) -> TranscriptSegment:
         if self.end_ms < self.start_ms:
             self.start_ms, self.end_ms = self.end_ms, self.start_ms
         return self

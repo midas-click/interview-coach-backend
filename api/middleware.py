@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import uuid
+from typing import Any
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
 
-from common.logging import get_logger, get_request_id, request_id_var
+from common.logging import get_logger, request_id_var
 
 logger = get_logger("api.middleware")
 

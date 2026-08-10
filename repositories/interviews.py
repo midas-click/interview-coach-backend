@@ -9,9 +9,18 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from database.models import (
-    Answer, EnglishAnalysis, Interview, InterviewAnalysis,
-    LearningTopic, Metrics, Question, QuestionReview,
-    Recommendation, Transcript, TranscriptCorrection, VocabularyItem,
+    Answer,
+    EnglishAnalysis,
+    Interview,
+    InterviewAnalysis,
+    LearningTopic,
+    Metrics,
+    Question,
+    QuestionReview,
+    Recommendation,
+    Transcript,
+    TranscriptCorrection,
+    VocabularyItem,
 )
 
 SessionFactory = Callable[[], Session]
@@ -220,9 +229,17 @@ class InterviewRepository:
 
             # Delete in dependency order: children first, then parent
             from database.models import (
-                Answer, EnglishAnalysis, InterviewAnalysis, LearningTopic,
-                Metrics, Question, QuestionReview, Recommendation,
-                Transcript, TranscriptCorrection, VocabularyItem,
+                Answer,
+                EnglishAnalysis,
+                InterviewAnalysis,
+                LearningTopic,
+                Metrics,
+                Question,
+                QuestionReview,
+                Recommendation,
+                Transcript,
+                TranscriptCorrection,
+                VocabularyItem,
             )
 
             # Learning topics reference recommendations by UUID

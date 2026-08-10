@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import uuid
-
 import pytest
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 
-from database.models import Answer, Base, Question
+from database.models import Base
 from repositories.analyses import AnalysisRepository
 from repositories.interviews import InterviewRepository
 

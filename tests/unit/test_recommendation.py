@@ -2,9 +2,9 @@
 
 import pytest
 
+from agents.recommendation import RecommendationAgent
 from models.transcript import TranscriptData
 from sdk.agent import AgentContext
-from agents.recommendation import RecommendationAgent
 from services.prompts import PromptStore
 from tests.conftest import FakeLLM, sample_transcript
 

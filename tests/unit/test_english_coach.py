@@ -2,9 +2,9 @@
 
 import pytest
 
+from agents.english_coach import EnglishCoach
 from models.transcript import TranscriptData
 from sdk.agent import AgentContext
-from agents.english_coach import EnglishCoach
 from services.prompts import PromptStore
 from tests.conftest import FakeLLM, sample_transcript
 

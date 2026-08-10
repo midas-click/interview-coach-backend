@@ -2,9 +2,9 @@
 
 import pytest
 
+from agents.interview_coach import InterviewCoach
 from models.transcript import TranscriptData
 from sdk.agent import AgentContext
-from agents.interview_coach import InterviewCoach
 from services.prompts import PromptStore
 from tests.conftest import FakeLLM, sample_transcript
 

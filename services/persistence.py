@@ -7,7 +7,6 @@ appropriate repository.
 
 from __future__ import annotations
 
-import json
 from typing import Any
 
 from common.logging import get_logger

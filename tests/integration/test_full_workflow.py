@@ -10,6 +10,7 @@ import asyncio
 import json
 from pathlib import Path
 
+from agents import build_registry
 from common.config import Settings
 from common.logging import setup_logging
 from database.session import build_session_factory_from_settings, init_db
@@ -20,7 +21,6 @@ from sdk.agent import AgentContext
 from services.deepseek import DeepSeekClient
 from services.persistence import PersistenceService
 from services.prompts import PromptStore
-from agents import build_registry
 
 ANALYSIS_AGENTS = ["interview_coach", "english_coach", "vocabulary", "metrics"]
 _PERSIST_MAP = {

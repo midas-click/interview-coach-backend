@@ -2,9 +2,9 @@
 
 import pytest
 
+from agents.conversation_parser import ConversationParser
 from models.transcript import TranscriptData
 from sdk.agent import AgentContext
-from agents.conversation_parser import ConversationParser
 from services.prompts import PromptStore
 from tests.conftest import FakeLLM, sample_transcript
 

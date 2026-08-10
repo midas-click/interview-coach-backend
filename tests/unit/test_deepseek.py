@@ -7,8 +7,8 @@ from types import SimpleNamespace
 import pytest
 
 from common.config import Settings
-from services.deepseek import DeepSeekClient, DeepSeekError
 from sdk.llm import TokenUsage
+from services.deepseek import DeepSeekClient, DeepSeekError
 
 
 def _client(**overrides: object) -> DeepSeekClient:

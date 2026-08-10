@@ -31,6 +31,9 @@ dev = [
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+include = ["*"]
+
 [tool.pytest.ini_options]
 pythonpath = ["."]
 asyncio_mode = "auto"
@@ -44,6 +47,10 @@ extend-exclude = ["alembic/versions"]
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "ASYNC"]
 ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"api/routers/interviews.py" = ["B008"]
+"tests/integration/*" = ["ASYNC230", "ASYNC240", "E701", "SIM115"]
 
 [tool.mypy]
 python_version = "3.12"

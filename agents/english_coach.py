@@ -58,7 +58,7 @@ class EnglishCoach(BaseAgent):
         total = sum(sizes) or 1
         metrics = {
             key: round(
-                sum(r["metrics"][key] * size for r, size in zip(results, sizes)) / total,
+                sum(r["metrics"][key] * size for r, size in zip(results, sizes, strict=False)) / total,
                 1,
             )
             for key in results[0]["metrics"]

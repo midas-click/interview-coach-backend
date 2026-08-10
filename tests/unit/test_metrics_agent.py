@@ -2,9 +2,9 @@
 
 import pytest
 
+from agents.metrics import MetricsAgent
 from models.transcript import TranscriptData
 from sdk.agent import AgentContext
-from agents.metrics import MetricsAgent
 from tests.conftest import sample_transcript
 
 

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -11,7 +13,6 @@ from common.config import Settings
 
 @pytest.fixture
 def client(tmp_path: Any) -> TestClient:
-    import os
     db_path = tmp_path / "test.db"
     database_url = f"sqlite:///{db_path}"
     settings = Settings(

@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import uuid
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from api.deps import get_analysis_repo, get_interview_repo
+from models.agent_outputs import VocabularyPhrase
 from models.api import (
     AnalysisResponse,
     EnglishResponse,
@@ -19,7 +19,6 @@ from models.api import (
     TranscriptCorrectionsResponse,
     VocabularyResponse,
 )
-from models.agent_outputs import VocabularyPhrase
 from repositories.analyses import AnalysisRepository
 from repositories.interviews import InterviewRepository
 

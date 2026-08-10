@@ -71,12 +71,13 @@ def _deduplicate_overlaps(segments: list[TranscriptSegment]) -> list[TranscriptS
     buckets: dict[tuple[str, float], TranscriptSegment] = {}
     for s in segments:
         key = (s.speaker, s.start)
-        if key not in buckets or s.end > buckets[key].end:
-            # Also prefer higher confidence when end is equal.
-            if key not in buckets or s.end > buckets[key].end or (
-                s.end == buckets[key].end and s.confidence > buckets[key].confidence
-            ):
-                buckets[key] = s
+        existing = buckets.get(key)
+        if (
+            existing is None
+            or s.end > existing.end
+            or (s.end == existing.end and s.confidence > existing.confidence)
+        ):
+            buckets[key] = s
     return sorted(buckets.values(), key=lambda s: s.start)
 
 

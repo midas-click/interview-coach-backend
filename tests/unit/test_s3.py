@@ -1,8 +1,6 @@
 """S3 service tests (key parsing, fake download)."""
 
-import pytest
 
-from models.transcript import TranscriptData
 from services.s3 import parse_interview_object_key
 
 

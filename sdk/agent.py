@@ -9,8 +9,9 @@ from __future__ import annotations
 
 import time
 from abc import ABC, abstractmethod
-from enum import Enum
-from typing import Any, Callable
+from collections.abc import Callable
+from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -22,7 +23,7 @@ from services.prompts import PromptStore
 logger = get_logger("sdk.agent")
 
 
-class AgentStatus(str, Enum):
+class AgentStatus(StrEnum):
     SUCCESS = "success"
     FAILED = "failed"
     SKIPPED = "skipped"

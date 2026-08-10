@@ -8,6 +8,7 @@ Usage::
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import sys
 
 from common.config import get_settings
@@ -28,10 +29,8 @@ def main() -> None:
     publisher = InngestEventPublisher(settings)
     consumer = SQSConsumer(settings, publisher)
 
-    try:
+    with contextlib.suppress(KeyboardInterrupt):
         asyncio.run(consumer.run_forever())
-    except KeyboardInterrupt:
-        pass
 
 
 if __name__ == "__main__":
