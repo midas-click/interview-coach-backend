@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from database.models import (
@@ -51,6 +51,12 @@ class InterviewRepository:
                     .offset(offset)
                 ).scalars()
             )
+
+    def count(self) -> int:
+        with self._session_factory() as session:
+            return session.execute(
+                select(func.count()).select_from(Interview)
+            ).scalar_one()
 
     def create_if_missing(
         self,

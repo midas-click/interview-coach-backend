@@ -93,7 +93,19 @@ def test_list_interviews_requires_auth(client: TestClient) -> None:
 def test_list_interviews_empty(client: TestClient, admin_headers: dict[str, str]) -> None:
     resp = client.get("/api/interviews", headers=admin_headers)
     assert resp.status_code == 200
-    assert resp.json() == []
+    assert resp.json() == {"items": [], "total": 0, "limit": 50, "offset": 0}
+
+
+def test_list_interviews_paginated(client: TestClient, admin_headers: dict[str, str]) -> None:
+    resp = client.get(
+        "/api/interviews?limit=1&offset=0", headers=admin_headers
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["limit"] == 1
+    assert body["offset"] == 0
+    assert isinstance(body["items"], list)
+    assert isinstance(body["total"], int)
 
 
 def test_get_interview_not_found(client: TestClient, admin_headers: dict[str, str]) -> None:

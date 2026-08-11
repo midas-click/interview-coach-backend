@@ -63,6 +63,13 @@ class InterviewDetail(InterviewSummary):
     timeline: list[dict[str, Any]] | None = None
 
 
+class InterviewListResponse(BaseModel):
+    items: list[InterviewSummary]
+    total: int
+    limit: int
+    offset: int
+
+
 class AnalysisResponse(BaseModel):
     interview_id: str
     analysis: InterviewCoachResult | None = None

@@ -12,6 +12,7 @@ from models.api import (
     AnalysisResponse,
     EnglishResponse,
     InterviewDetail,
+    InterviewListResponse,
     InterviewSummary,
     MetricsResponse,
     QuestionReviewsResponse,
@@ -66,13 +67,19 @@ def delete_interview(
         raise HTTPException(status_code=404, detail="interview not found")
 
 
-@router.get("", response_model=list[InterviewSummary])
+@router.get("", response_model=InterviewListResponse)
 def list_interviews(
-    limit: int = 50,
+    limit: int = 10,
     offset: int = 0,
     repo: InterviewRepository = Depends(get_interview_repo),
-) -> list[InterviewSummary]:
-    return [_summary(r) for r in repo.list(limit=limit, offset=offset)]
+) -> InterviewListResponse:
+    items = [_summary(r) for r in repo.list(limit=limit, offset=offset)]
+    return InterviewListResponse(
+        items=items,
+        total=repo.count(),
+        limit=limit,
+        offset=offset,
+    )
 
 
 @router.get("/{interview_id}", response_model=InterviewDetail)
