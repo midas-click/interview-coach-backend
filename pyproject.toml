@@ -52,6 +52,9 @@ ignore = ["E501"]
 
 [tool.ruff.lint.per-file-ignores]
 "api/routers/interviews.py" = ["B008"]
+"api/routers/auth.py" = ["B008"]
+"api/routers/users.py" = ["B008"]
+"api/deps.py" = ["B008"]
 "tests/integration/*" = ["ASYNC230", "ASYNC240", "E701", "SIM115"]
 
 [tool.mypy]

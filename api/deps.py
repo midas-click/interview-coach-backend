@@ -42,7 +42,7 @@ def get_current_user(
     try:
         payload = decode_token(settings, credentials.credentials)
     except jwt.PyJWTError:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+        raise HTTPException(status_code=401, detail="Invalid or expired token") from None
     username = payload.get("sub")
     if not username:
         raise HTTPException(status_code=401, detail="Invalid token")

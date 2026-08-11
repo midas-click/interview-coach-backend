@@ -6,7 +6,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from api.deps import get_analysis_repo, get_interview_repo, get_current_user, require_admin
+from api.deps import get_analysis_repo, get_current_user, get_interview_repo, require_admin
 from models.agent_outputs import VocabularyPhrase
 from models.api import (
     AnalysisResponse,
