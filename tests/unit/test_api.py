@@ -93,7 +93,7 @@ def test_list_interviews_requires_auth(client: TestClient) -> None:
 def test_list_interviews_empty(client: TestClient, admin_headers: dict[str, str]) -> None:
     resp = client.get("/api/interviews", headers=admin_headers)
     assert resp.status_code == 200
-    assert resp.json() == {"items": [], "total": 0, "limit": 50, "offset": 0}
+    assert resp.json() == {"items": [], "total": 0, "limit": 10, "offset": 0}
 
 
 def test_list_interviews_paginated(client: TestClient, admin_headers: dict[str, str]) -> None:
