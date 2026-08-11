@@ -6,7 +6,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from api.deps import get_analysis_repo, get_interview_repo
+from api.deps import get_analysis_repo, get_interview_repo, get_current_user, require_admin
 from models.agent_outputs import VocabularyPhrase
 from models.api import (
     AnalysisResponse,
@@ -22,7 +22,11 @@ from models.api import (
 from repositories.analyses import AnalysisRepository
 from repositories.interviews import InterviewRepository
 
-router = APIRouter(prefix="/api/interviews", tags=["interviews"])
+router = APIRouter(
+    prefix="/api/interviews",
+    tags=["interviews"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 def _normalise_segments(raw_json: dict) -> list[dict]:
@@ -52,7 +56,7 @@ def _summary(row: Any) -> InterviewSummary:
     )
 
 
-@router.delete("/{interview_id}", status_code=204)
+@router.delete("/{interview_id}", status_code=204, dependencies=[Depends(require_admin)])
 def delete_interview(
     interview_id: str,
     repo: InterviewRepository = Depends(get_interview_repo),

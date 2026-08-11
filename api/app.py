@@ -14,7 +14,9 @@ from inngest.fast_api import serve as inngest_serve
 
 from agents import build_registry
 from api.middleware import add_request_id_middleware
+from api.routers.auth import router as auth_router
 from api.routers.interviews import router as interviews_router
+from api.routers.users import router as users_router
 from common.config import Settings
 from common.logging import setup_logging
 from database.session import build_session_factory_from_settings, init_db
@@ -22,6 +24,7 @@ from orchestration.client import build_inngest_client
 from orchestration.functions.interview_uploaded import make_interview_uploaded_fn
 from repositories.analyses import AnalysisRepository
 from repositories.interviews import InterviewRepository
+from repositories.users import UserRepository
 from services.deepseek import DeepSeekClient
 from services.persistence import PersistenceService
 from services.prompts import PromptStore
@@ -48,6 +51,7 @@ def create_app(settings: Settings | None = None, *, session_factory: Any = None)
         command.upgrade(alembic_cfg, "head")
     interview_repo = InterviewRepository(session_factory)
     analysis_repo = AnalysisRepository(session_factory)
+    user_repo = UserRepository(session_factory)
 
     # ── services ────────────────────────────────────────────────────────
     try:
@@ -92,8 +96,11 @@ def create_app(settings: Settings | None = None, *, session_factory: Any = None)
     app.state.settings = settings
     app.state.interview_repo = interview_repo
     app.state.analysis_repo = analysis_repo
+    app.state.user_repo = user_repo
 
     # Routes
+    app.include_router(auth_router)
+    app.include_router(users_router)
     app.include_router(interviews_router)
 
     # Inngest functions served at /api/inngest

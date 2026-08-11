@@ -16,6 +16,35 @@ from models.agent_outputs import (
 )
 
 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class UserOut(BaseModel):
+    id: str
+    username: str
+    role: str
+
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str
+    user: UserOut
+
+
+class UserCreate(BaseModel):
+    username: str
+    password: str
+    role: str = "user"
+
+
+class UserUpdate(BaseModel):
+    username: str
+    role: str
+    password: str | None = None
+
+
 class InterviewSummary(BaseModel):
     id: str
     interview_id: str
