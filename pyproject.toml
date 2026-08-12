@@ -12,6 +12,7 @@ dependencies = [
     "psycopg[binary]>=3.1",
     "alembic>=1.13",
     "inngest>=0.5,<1",
+    "mangum>=0.19",
     "openai>=1.30",
     "boto3>=1.34",
     "pyyaml>=6.0",

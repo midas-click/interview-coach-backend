@@ -5,8 +5,8 @@ Event-driven AI interview analysis platform. Receives transcript uploads, proces
 ## Architecture
 
 ```
-Desktop App → S3 → EventBridge → SQS → Worker → Inngest → Workflow
-                                                              │
+Desktop App → S3 → EventBridge → Worker Lambda → Inngest → Workflow
+                                                             │
                               ┌────────────────────────────────┤
                               ▼                                ▼
                        Conversation Parser            Analysis Agents (parallel)
@@ -16,11 +16,11 @@ Desktop App → S3 → EventBridge → SQS → Worker → Inngest → Workflow
                               │                          Recommendation
                               └──────────┬───────────────────┤
                                          ▼                   ▼
-                                  Question Reviewer    PostgreSQL
+                                  Question Reviewer    PostgreSQL (Neon)
                                          │                   │
                                          └─────────┬─────────┘
                                                    ▼
-                                              REST API
+                                              REST API (Lambda + Function URL)
 ```
 
 ## Quick Start
@@ -41,7 +41,6 @@ docker-compose exec api python -m scripts.seed_admin
 | API | `8000` | FastAPI REST + Inngest function host |
 | Inngest Dev Server | `8288` | Workflow runner + dashboard |
 | PostgreSQL | `5432` | Interview data + analytics + users |
-| Worker | — | SQS consumer (idle in local dev) |
 
 ## Project Structure
 
@@ -57,7 +56,7 @@ backend/
 ├── prompts/          LLM prompt templates (.md with YAML frontmatter)
 ├── sdk/              Agent SDK (BaseAgent, AgentContext, AgentResult, AgentRegistry)
 ├── common/           Config, structured JSON logging
-├── scripts/          Worker entrypoints + admin seeding
+├── scripts/          Migrations, Lambda entrypoints, admin seeding
 └── tests/            Unit + integration tests
 ```
 
@@ -162,14 +161,28 @@ pytest                          # 83 unit tests
 python -m tests.integration.test_full_workflow  # End-to-end with real DeepSeek
 ```
 
-## Deployment
+## Deployment (AWS Lambda)
+
+Production runs entirely on AWS Lambda + Neon Postgres — no ECS, no Docker:
 
 ```bash
+# 1. Build the deployment zip (Linux-compatible, from any OS)
+python scripts/build_lambda.py
+
+# 2. Upload the zip to the code bucket, then deploy infra
+aws s3 cp dist/lambda.zip s3://interview-intelligence-transcripts-lambda-code/lambda.zip
 cd ../terraform
 terraform init && terraform apply
+
+# 3. Run migrations (or the CI/CD pipeline does this automatically)
+aws lambda invoke --function-name interview-intelligence-migrate --payload '{}' out.json
 ```
 
-See `../docs/deployment.md` for full AWS deployment guide.
+CI/CD (`.github/workflows/ci.yml`) lints, tests, rebuilds the zip, uploads it
+to S3, updates all three Lambda functions, and runs migrations on every push
+to `main`.
+
+See `../docs/deployment.md` for the full guide.
 
 ## Environment Variables
 
@@ -183,5 +196,8 @@ See `../docs/deployment.md` for full AWS deployment guide.
 | `ADMIN_USERNAME` | `admin` | Initial admin username (seed script) |
 | `ADMIN_PASSWORD` | `admin123` | Initial admin password (seed script) |
 | `INNGEST_DEV` | `true` | Dev server mode |
-| `SQS_QUEUE_URL` | — | SQS queue (production) |
 | `AWS_REGION` | `us-east-2` | AWS region |
+
+On Lambda, secrets (`DATABASE_URL`, `DEEPSEEK_API_KEY`, `INNGEST_EVENT_KEY`,
+`INNGEST_SIGNING_KEY`, `JWT_SECRET_KEY`) are read from AWS Secrets Manager at
+cold start — see `api/lambda_runtime.py`.

@@ -8,8 +8,12 @@ on:
 
 env:
   AWS_REGION: us-east-2
-  ECR_API_REPO: interview-intelligence-api
-  ECR_WORKER_REPO: interview-intelligence-worker
+  # Lambda function names created by the terraform repo (${name}-<role>).
+  API_FN: interview-intelligence-api
+  WORKER_FN: interview-intelligence-worker
+  MIGRATE_FN: interview-intelligence-migrate
+  CODE_BUCKET: interview-intelligence-transcripts-lambda-code
+  CODE_KEY: lambda.zip
 
 jobs:
   # ── Lint ─────────────────────────────────────────────────────────────
@@ -38,51 +42,34 @@ jobs:
       - run: pip install -e ".[dev]"
       - run: pytest -q --tb=short
 
-  # ── Build & Push Docker ──────────────────────────────────────────────
-  build-and-push:
+  # ── Build & Deploy (Lambda) ──────────────────────────────────────────
+  deploy:
     if: github.ref == 'refs/heads/main'
     needs: [lint, test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-      - uses: aws-actions/amazon-ecr-login@v2
-      - uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: docker/Dockerfile
-          push: true
-          tags: |
-            ${{ secrets.ECR_REGISTRY }}/${{ env.ECR_API_REPO }}:${{ github.sha }}
-            ${{ secrets.ECR_REGISTRY }}/${{ env.ECR_API_REPO }}:latest
-            ${{ secrets.ECR_REGISTRY }}/${{ env.ECR_WORKER_REPO }}:${{ github.sha }}
-            ${{ secrets.ECR_REGISTRY }}/${{ env.ECR_WORKER_REPO }}:latest
-
-  # ── Deploy ECS ───────────────────────────────────────────────────────
-  deploy:
-    if: github.ref == 'refs/heads/main'
-    needs: [build-and-push]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-      - name: Deploy API
+      - name: Build Lambda zip
+        run: python scripts/build_lambda.py
+      - name: Upload zip to S3
         run: |
-          aws ecs update-service \
-            --cluster interview-intelligence \
-            --service interview-intelligence-api \
-            --force-new-deployment
-      - name: Deploy Worker
+          aws s3 cp dist/lambda.zip "s3://$CODE_BUCKET/$CODE_KEY" --region "$AWS_REGION"
+      - name: Update Lambda code (from S3)
         run: |
-          aws ecs update-service \
-            --cluster interview-intelligence \
-            --service interview-intelligence-worker \
-            --force-new-deployment
+          aws lambda update-function-code --function-name "$API_FN"     --s3-bucket "$CODE_BUCKET" --s3-key "$CODE_KEY" --region "$AWS_REGION"
+          aws lambda update-function-code --function-name "$WORKER_FN"  --s3-bucket "$CODE_BUCKET" --s3-key "$CODE_KEY" --region "$AWS_REGION"
+          aws lambda update-function-code --function-name "$MIGRATE_FN" --s3-bucket "$CODE_BUCKET" --s3-key "$CODE_KEY" --region "$AWS_REGION"
+      - name: Run database migrations
+        run: |
+          aws lambda invoke --function-name "$MIGRATE_FN" --payload '{}' /tmp/migrate.out.json --region "$AWS_REGION"
+          cat /tmp/migrate.out.json

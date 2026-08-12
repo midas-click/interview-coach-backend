@@ -41,14 +41,10 @@ def create_app(settings: Settings | None = None, *, session_factory: Any = None)
     if session_factory is None:
         session_factory = build_session_factory_from_settings(settings)
     if settings.database_url.startswith("sqlite"):
+        # Dev / tests: create tables directly. Production migrations run at
+        # deploy time via ``scripts.run_migrations`` (or the migrate Lambda) —
+        # never on Lambda cold start, where concurrent invocations would race.
         init_db(settings)
-    elif settings.database_url.startswith("postgres"):
-        from alembic.config import Config
-
-        from alembic import command
-        alembic_cfg = Config("alembic.ini")
-        alembic_cfg.set_main_option("sqlalchemy.url", settings.database_url)
-        command.upgrade(alembic_cfg, "head")
     interview_repo = InterviewRepository(session_factory)
     analysis_repo = AnalysisRepository(session_factory)
     user_repo = UserRepository(session_factory)
