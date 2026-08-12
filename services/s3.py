@@ -46,11 +46,11 @@ class S3TranscriptSource:
     """Downloads and validates ``transcript.json`` from S3."""
 
     def __init__(self, settings: Settings) -> None:
-        session = boto3.Session(
-            region_name=settings.aws_region,
-            aws_access_key_id=settings.aws_access_key_id or None,
-            aws_secret_access_key=settings.aws_secret_access_key or None,
-        )
+        # Let boto3 resolve credentials from the environment. On Lambda the
+        # runtime injects AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY/AWS_SESSION_TOKEN;
+        # passing the first two explicitly would DROP the session token and
+        # break every request with InvalidAccessKeyId.
+        session = boto3.Session(region_name=settings.aws_region)
         self._s3 = session.client(
             "s3", config=Config(retries={"max_attempts": 3, "mode": "standard"})
         )
